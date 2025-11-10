@@ -15,6 +15,10 @@ BoxBox provides a complete workflow for working with specific image regions:
 
 ### 1. BoxSelector (📦 BoxSelector)
 
+<p align="center">
+  <img src="images/box_selector.png" width="700" alt="BoxBox Preview">
+</p>
+
 Interactive interface to select rectangular regions on images.
 
 #### Input
