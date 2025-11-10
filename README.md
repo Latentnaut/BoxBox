@@ -21,6 +21,11 @@ BoxBox provides a complete workflow for working with specific image regions:
 
 Interactive interface to select rectangular regions on images.
 
+<p align="center">
+  <img src="image/box_selector_node.png" width="700" alt="BoxBox Preview">
+</p>
+
+
 #### Input
 - `image` (IMAGE): Source image to select from
 
@@ -49,6 +54,10 @@ Interactive interface to select rectangular regions on images.
 
 ### 2. BoxCrop (✂️ BoxCrop)
 
+<p align="center">
+  <img src="image/box_crop_node.png" width="700" alt="BoxBox Preview">
+</p>
+
 Crops images according to coordinates provided by BoxSelector.
 
 #### Input
@@ -73,6 +82,10 @@ Crops images according to coordinates provided by BoxSelector.
 ---
 
 ### 3. BoxResize (📦 BoxResize)
+
+<p align="center">
+  <img src="image/box_resize_node.png" width="700" alt="BoxBox Preview">
+</p>
 
 Resizes cropped regions with preset aspect ratios or custom dimensions, with full metadata tracking.
 
@@ -122,6 +135,11 @@ Resizes cropped regions with preset aspect ratios or custom dimensions, with ful
 
 ### 4. BoxReinsert (🎨 BoxReinsert)
 
+<p align="center">
+  <img src="image/box_reinsert_node.png" width="700" alt="BoxBox Preview">
+</p>
+
+
 Reinserts generated images back into original positions using metadata.
 
 #### Input
@@ -166,6 +184,11 @@ LoadImage
     ↓
 Output: Final image with AI-generated region
 ```
+
+<p align="center">
+  <img src="image/workflow.png" width="700" alt="BoxBox Preview">
+</p>
+
 
 ### Direct Editing Workflow (skip resize)
 ```
