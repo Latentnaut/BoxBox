@@ -15,16 +15,7 @@ BoxBox provides a complete workflow for working with specific image regions:
 
 ### 1. BoxSelector (📦 BoxSelector)
 
-<p align="center">
-  <img src="image/box_selector.png" width="700" alt="BoxBox Preview">
-</p>
-
 Interactive interface to select rectangular regions on images.
-
-<p align="center">
-  <img src="image/box_selector_node.png" width="700" alt="BoxBox Preview">
-</p>
-
 
 #### Input
 - `image` (IMAGE): Source image to select from
@@ -46,17 +37,24 @@ Interactive interface to select rectangular regions on images.
     "y1": 150,
     "x2": 600,
     "y2": 450,
+    "borderWidth": 3,
+    "borderPosition": "inside",
+    "displayScaleFactor": 1.0,
     "selected": true
 }
 ```
 
+#### Advanced Features
+- 📐 **Aspect Ratio Locking**: Select from preset ratios or draw freely
+  - Presets: 1:1, 3:4, 5:8, 9:16, 9:21, 4:3, 3:2, 16:9, 21:9
+  - Custom: Draw freely and get closest standard ratio
+- 🔧 **Auto-Scale Large Images**: Images > 1024px automatically scaled down for smooth selection
+  - Scaling factor saved in metadata (`displayScaleFactor`)
+  - BoxCrop and BoxReinsert automatically correct coordinates
+
 ---
 
 ### 2. BoxCrop (✂️ BoxCrop)
-
-<p align="center">
-  <img src="image/box_crop_node.png" width="700" alt="BoxBox Preview">
-</p>
 
 Crops images according to coordinates provided by BoxSelector.
 
@@ -75,17 +73,21 @@ Crops images according to coordinates provided by BoxSelector.
 
 #### How It Works
 1. Extracts x1, x2, y1, y2 from metadata
-2. Normalizes coordinates (ensures x1 < x2, y1 < y2)
-3. Clips to image boundaries
-4. Crops the specified region
+2. If `displayScaleFactor` is present (from large image auto-scaling):
+   - Divides coordinates by scale factor to convert from preview space to original image space
+3. Normalizes coordinates (ensures x1 < x2, y1 < y2)
+4. Clips to image boundaries
+5. Crops the specified region
+
+#### Automatic Scale Correction
+When BoxSelector uses auto-scale for large images (> 1024px), BoxCrop automatically:
+- Detects the `displayScaleFactor` in metadata
+- Converts preview-space coordinates back to original-image-space
+- Ensures crops match the intended selection on the original image
 
 ---
 
 ### 3. BoxResize (📦 BoxResize)
-
-<p align="center">
-  <img src="image/box_resize_node.png" width="700" alt="BoxBox Preview">
-</p>
 
 Resizes cropped regions with preset aspect ratios or custom dimensions, with full metadata tracking.
 
@@ -135,11 +137,6 @@ Resizes cropped regions with preset aspect ratios or custom dimensions, with ful
 
 ### 4. BoxReinsert (🎨 BoxReinsert)
 
-<p align="center">
-  <img src="image/box_reinsert_node.png" width="700" alt="BoxBox Preview">
-</p>
-
-
 Reinserts generated images back into original positions using metadata.
 
 #### Input
@@ -153,12 +150,20 @@ Reinserts generated images back into original positions using metadata.
 
 #### How It Works
 1. Reads box_metadata for original selection position (x1, x2, y1, y2)
-2. If resize_metadata is provided:
+2. If `displayScaleFactor` is present (from large image auto-scaling):
+   - Divides coordinates by scale factor to convert from preview space to original image space
+3. If resize_metadata is provided:
    - Resizes generated_image back to crop dimensions
    - Inserts at exact original position
-3. If resize_metadata is empty:
+4. If resize_metadata is empty:
    - Inserts generated_image as-is (bypasses resize reversal)
-4. Returns full image with processed region in place
+5. Returns full image with processed region in place
+
+#### Automatic Scale Correction
+When BoxSelector uses auto-scale for large images (> 1024px), BoxReinsert automatically:
+- Detects the `displayScaleFactor` in metadata
+- Converts preview-space coordinates back to original-image-space
+- Reinserts the generated content at the correct position on the original image
 
 #### Flexible Workflow
 - **With Resize**: Generated → De-resize → Reinsert
@@ -185,11 +190,6 @@ LoadImage
 Output: Final image with AI-generated region
 ```
 
-<p align="center">
-  <img src="image/workflow.png" width="700" alt="BoxBox Preview">
-</p>
-
-
 ### Direct Editing Workflow (skip resize)
 ```
 LoadImage
@@ -211,16 +211,18 @@ Output: Final image
 
 The metadata system ensures complete traceability:
 
-1. **BoxSelector Output**: `{"x1": ..., "y1": ..., "x2": ..., "y2": ...}`
+1. **BoxSelector Output**: `{"x1": ..., "y1": ..., "x2": ..., "y2": ..., "displayScaleFactor": ...}`
    - Stores original selection coordinates
+   - Includes scale factor if image was auto-scaled (for large images > 1024px)
+   - borderWidth and borderPosition also included
 
 2. **BoxResize Output**: `{"original_width": ..., "resized_width": ..., "scale_x": ..., ...}`
    - Tracks resize transformation for reversal
 
-3. **BoxReinsert**: Uses both to:
-   - Know where region was selected (box_metadata)
-   - Know how to de-scale (resize_metadata)
-   - Reinsert at exact original location
+3. **BoxCrop & BoxReinsert**: Automatically handle:
+   - If `displayScaleFactor` present: Convert coordinates from preview-space to original-image-space
+   - Use converted coordinates for accurate cropping and reinsertion
+   - Both nodes work seamlessly with auto-scaled selections
 
 ---
 
@@ -264,14 +266,23 @@ This allows:
 
 **Left Panel (Controls)**
 - Image name
+- Aspect Ratio selector (9 presets + Custom mode)
 - Clear Selection button
-- Selection coordinates display
+- Selection coordinates display with live aspect ratio info
+- Scale info display (when large image is auto-scaled)
 
 **Right Panel (Canvas)**
 - Interactive image canvas
+- Auto-scaled preview (for images > 1024px)
 - Click + drag to draw rectangle
 - Drag handles to resize
 - Drag body to move
+- Resize handles with smooth interaction
+
+**Features**
+- 🔧 **Automatic Large Image Handling**: Seamlessly scales down for preview while maintaining accuracy
+- 📐 **Aspect Ratio Locking**: Lock to standard ratios or draw freely
+- 📊 **Live Feedback**: Real-time coordinate and ratio display
 
 ---
 
@@ -350,7 +361,14 @@ numpy>=1.20.0
 
 ## 📝 Changelog
 
-### v1.0.0 (Current)
+### v1.1.0 (Current)
+- ✅ **Auto-Scale Large Images**: Images > 1024px automatically scaled in preview for smooth selection
+- ✅ **displayScaleFactor Metadata**: Scale factor saved in metadata for accurate coordinate conversion
+- ✅ **Aspect Ratio Locking**: 9 preset aspect ratios + custom free drawing mode
+- ✅ **Smart Coordinate Correction**: BoxCrop and BoxReinsert auto-correct coordinates from scaled previews
+- ✅ **Live Aspect Ratio Display**: Shows closest standard ratio when drawing freely
+
+### v1.0.0
 - ✅ BoxSelector with interactive region selection
 - ✅ BoxCrop with coordinate-based cropping
 - ✅ BoxResize with preset aspect ratios and custom sizes
