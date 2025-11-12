@@ -1210,9 +1210,9 @@ async function openRegionDialog(node, app) {
                 confirmBtn.onclick = () => {
                     const coords = selector.getCoordinates();
 
-                    // Cerca il widget region_metadata tra i widget del nodo
+                    // Cerca il widget box_metadata tra i widget del nodo
                     // ComfyUI lo crea automaticamente dal INPUT_TYPES opzionale
-                    let metadataWidget = node.widgets?.find((w) => w.name === "region_metadata");
+                    let metadataWidget = node.widgets?.find((w) => w.name === "box_metadata");
 
                     if (metadataWidget) {
                         const metadata = JSON.stringify({
@@ -1225,7 +1225,7 @@ async function openRegionDialog(node, app) {
                         }
                         console.log("[RegionSelectorExt] Metadata widget updated with:", metadata);
                     } else {
-                        console.warn("[RegionSelectorExt] region_metadata widget not found. Available widgets:", node.widgets?.map(w => w.name) || []);
+                        console.warn("[RegionSelectorExt] box_metadata widget not found. Available widgets:", node.widgets?.map(w => w.name) || []);
                     }
 
                     console.log("[RegionSelectorExt] Coordinates saved:", coords);
