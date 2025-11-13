@@ -1,5 +1,5 @@
 [project]
-name = "BoxBox"
+name = "ComfyUI-BoxBox"
 description = "BoxBox is a lightweight ComfyUI extension for visualizing image boxes and controlling regions interactively inside the node interface."
 version = "1.0.2"
 license = {file = "LICENSE"} 
@@ -31,5 +31,6 @@ DisplayName = "BoxBox"
 Icon = ""
 includes = []
 # "requires-comfyui" = ">=1.0.0"
+
 
 
