@@ -2,6 +2,13 @@
 
 A comprehensive ComfyUI custom nodes package for selecting, cropping, resizing, and reinserting image regions with full metadata tracking.
 
+
+🚧 Known Issue
+
+In some cases, when the ComfyUI window is too small or zoomed, the selection overlay may appear misaligned with the actual image.
+A fix is currently in development.
+
+
 ## 📋 Overview
 
 BoxBox provides a complete workflow for working with specific image regions:
@@ -397,11 +404,6 @@ Use BoxResize with "Custom" mode and specify exact width/height.
 
 ---
 
-🚧 Known Issue
-
-In some cases, when the ComfyUI window is too small or zoomed, the selection overlay may appear misaligned with the actual image.
-A fix is currently in development.
-
 
 ## 📄 License
 
@@ -416,4 +418,5 @@ For issues, feature requests, or suggestions, please contact the developer.
 ---
 
 **Created for ComfyUI** - Transform your images with precision! 🎯✂️📦🎨
+
 
