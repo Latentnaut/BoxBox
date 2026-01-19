@@ -56,7 +56,7 @@ This is an improved fork of the original [BoxBox](https://github.com/mercu-lore/
 ### Method 2: Manual Installation
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/YOUR_USERNAME/BoxBox.git
+git clone https://github.com/Latentnaut/BoxBox.git
 ```
 
 Then restart ComfyUI.
