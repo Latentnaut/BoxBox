@@ -230,8 +230,8 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
             aspectRatioHint.style.color = "#64748b";
             aspectRatioHint.style.fontWeight = "normal";
         } else {
-            aspectRatioHint.textContent = `Rettangolo vincolato a ${aspectRatioMode}`;
-            aspectRatioHint.style.color = "#16a34a";
+            aspectRatioHint.textContent = `Constrained to ${aspectRatioMode}`;
+            aspectRatioHint.style.color = "#818cf8";
             aspectRatioHint.style.fontWeight = "600";
         }
         console.log(`[AspectRatio] Initialized - Mode: ${aspectRatioMode}, Value: ${aspectRatioValue}`);
@@ -1406,7 +1406,7 @@ async function openRegionDialog(node, app) {
                 gap: 4px;
             ">
                 <!-- Title -->
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; padding-top: 16px;">
                     <span style="font-size: 20px;">📦</span>
                     <div>
                         <h1 style="font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -0.01em; color: #f0f2f5;">Box Selector</h1>
@@ -1636,8 +1636,22 @@ async function openRegionDialog(node, app) {
         dialog.close();
     };
 
-    // Show dialog with no external buttons (buttons are inside sidebar)
+    // Show dialog — hide ComfyDialog's default content/buttons column
     dialog.show();
+
+    // Remove ComfyDialog's default content area (creates unwanted left column)
+    const dialogContent = dialog.element.querySelector('.comfy-modal-content');
+    if (dialogContent) {
+        dialogContent.style.display = 'none';
+    }
+    // Also hide any default button containers ComfyDialog may create
+    const dialogBtns = dialog.element.querySelectorAll('button');
+    dialogBtns.forEach(btn => {
+        // Only hide buttons that are NOT inside our container
+        if (!container.contains(btn)) {
+            btn.style.display = 'none';
+        }
+    });
 
     // Initialize selector after DOM is rendered
     setTimeout(() => {
