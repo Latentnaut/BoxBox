@@ -193,12 +193,12 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
 
             // Aggiorna hint
             if (aspectRatioMode === "free") {
-                aspectRatioHint.textContent = "Disegno libero - il ratio verrà calcolato";
-                aspectRatioHint.style.color = "#64748b";
+                aspectRatioHint.textContent = "Free draw — ratio calculated after";
+                aspectRatioHint.style.color = "#6b7280";
                 aspectRatioHint.style.fontWeight = "normal";
             } else {
-                aspectRatioHint.textContent = `Rettangolo vincolato a ${aspectRatioMode}`;
-                aspectRatioHint.style.color = "#16a34a";
+                aspectRatioHint.textContent = `Constrained to ${aspectRatioMode}`;
+                aspectRatioHint.style.color = "#818cf8";
                 aspectRatioHint.style.fontWeight = "600";
             }
 
@@ -854,29 +854,28 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
             // Formato display basato su vicinanza
             if (diffPercent < 3) {
                 // Molto vicino - mostra come esatto
-                aspectRatioDisplay = `<span style="color: #16a34a; font-weight: bold;">✓ ${closestRatio.label}</span>`;
+                aspectRatioDisplay = `<span style="color: #4ade80; font-weight: 600;">✓ ${closestRatio.label}</span>`;
             } else if (diffPercent < 8) {
                 // Abbastanza vicino - mostra approssimato
-                aspectRatioDisplay = `<span style="color: #ea580c; font-weight: bold;">~ ${closestRatio.label}</span> <span style="opacity: 0.6; font-size: 11px;">(${ratio.toFixed(2)}:1)</span>`;
+                aspectRatioDisplay = `<span style="color: #fb923c; font-weight: 600;">~ ${closestRatio.label}</span> <span style="opacity: 0.5; font-size: 10px;">(${ratio.toFixed(2)}:1)</span>`;
             } else {
                 // Troppo diverso - mostra custom + più vicino
-                aspectRatioDisplay = `<span style="color: #2563eb; font-weight: bold;">${ratio.toFixed(2)}:1</span> <span style="opacity: 0.5; font-size: 11px;">(vicino: ${closestRatio.display})</span>`;
+                aspectRatioDisplay = `<span style="color: #818cf8; font-weight: 600;">${ratio.toFixed(2)}:1</span> <span style="opacity: 0.45; font-size: 10px;">(≈ ${closestRatio.display})</span>`;
             }
         } else {
             // 🔒 MODALITÀ VINCOLATA: Mostra il vincolo attivo
-            aspectRatioDisplay = `<span style="color: #16a34a; font-weight: bold;">🔒 ${aspectRatioMode}</span> <span style="opacity: 0.6; font-size: 11px;">(${ratio.toFixed(2)}:1)</span>`;
+            aspectRatioDisplay = `<span style="color: #4ade80; font-weight: 600;">🔒 ${aspectRatioMode}</span> <span style="opacity: 0.5; font-size: 10px;">(${ratio.toFixed(2)}:1)</span>`;
         }
 
         baseCoordinates.innerHTML = `
-            <strong>📍 Coordinates:</strong><br>
-            x1 = ${Math.round(baseX1)}px, y1 = ${Math.round(baseY1)}px<br>
-            x2 = ${Math.round(baseX2)}px, y2 = ${Math.round(baseY2)}px<br>
+            <strong style="color: #a5b4fc;">📍 Coordinates</strong><br>
+            x1 = ${Math.round(baseX1)}, y1 = ${Math.round(baseY1)}<br>
+            x2 = ${Math.round(baseX2)}, y2 = ${Math.round(baseY2)}<br>
             <br>
-            <strong>📏 Size:</strong><br>
-            Width: ${w}px<br>
-            Height: ${h}px<br>
+            <strong style="color: #a5b4fc;">📏 Size</strong><br>
+            ${w} × ${h} px<br>
             <br>
-            <strong>✨ Aspect Ratio:</strong> ${aspectRatioDisplay}
+            <strong style="color: #a5b4fc;">✨ Ratio</strong> ${aspectRatioDisplay}
         `;
     }
 
@@ -1267,180 +1266,207 @@ async function openRegionDialog(node, app) {
         }
     }
 
-    dialog.element.style.width = "95vw";
-    dialog.element.style.height = "95vh";
+    dialog.element.style.width = "96vw";
+    dialog.element.style.height = "96vh";
     dialog.element.style.maxWidth = "none";
     dialog.element.style.maxHeight = "none";
+    dialog.element.style.borderRadius = "16px";
+    dialog.element.style.overflow = "hidden";
+    dialog.element.style.border = "1px solid rgba(255,255,255,0.06)";
+    dialog.element.style.boxShadow = "0 32px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)";
 
-    // Crea il contenitore HTML
+    // Create main container
     const container = document.createElement("div");
     container.style.cssText = `
         width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
-        background: white;
+        background: #0f0f1a;
+        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        color: #e0e4ec;
     `;
 
-    // Aggiungi CSS per il rettangolo e i resize handles
+    // Inject modern styles
     const styleTag = document.createElement("style");
     styleTag.textContent = `
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        /* ═══ Selection Rectangle ═══ */
         .rectangle {
             position: absolute;
-            background-color: rgba(37, 99, 235, 0.05);
+            background-color: rgba(99, 102, 241, 0.08);
             cursor: move;
             transition: none;
             z-index: 10;
         }
-
         .rectangle.border-inside {
-            border: 3px solid #2563eb;
+            border: 2px solid #818cf8;
+            box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.15), inset 0 0 20px rgba(99, 102, 241, 0.06);
         }
-
         .rectangle.border-outside {
-            outline: 3px solid #2563eb;
+            outline: 2px solid #818cf8;
             outline-offset: 0px;
         }
-
         .rectangle.thick-border {
-            box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.25), 0 0 0 1px rgba(129, 140, 248, 0.2);
         }
 
+        /* ═══ Resize Handles ═══ */
         .resize-handle {
             position: absolute;
-            background-color: #2563eb;
+            background: #818cf8;
             z-index: 20;
-            opacity: 0.7;
-            transition: opacity 0.2s;
+            opacity: 0.85;
+            transition: all 0.15s ease;
+            border-radius: 2px;
         }
-
         .resize-handle:hover {
             opacity: 1;
-            box-shadow: 0 0 6px rgba(37, 99, 235, 0.8);
+            background: #a5b4fc;
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.7);
+            transform: scale(1.2);
         }
 
-        .resize-handle.top,
-        .resize-handle.bottom {
-            width: 100%;
-            height: 8px;
-            cursor: ns-resize;
+        /* Edge handles */
+        .resize-handle.top, .resize-handle.bottom {
+            width: 100%; height: 6px; cursor: ns-resize;
+            border-radius: 0;
+            opacity: 0;
         }
+        .resize-handle.top:hover, .resize-handle.bottom:hover { opacity: 0.6; transform: scaleY(1.5); }
+        .resize-handle.top { top: -3px; left: 0; }
+        .resize-handle.bottom { bottom: -3px; left: 0; }
 
-        .resize-handle.top {
-            top: -4px;
-            left: 0;
+        .resize-handle.left, .resize-handle.right {
+            width: 6px; height: 100%; cursor: ew-resize;
+            border-radius: 0;
+            opacity: 0;
         }
+        .resize-handle.left:hover, .resize-handle.right:hover { opacity: 0.6; transform: scaleX(1.5); }
+        .resize-handle.left { left: -3px; top: 0; }
+        .resize-handle.right { right: -3px; top: 0; }
 
-        .resize-handle.bottom {
-            bottom: -4px;
-            left: 0;
-        }
-
-        .resize-handle.left,
-        .resize-handle.right {
-            width: 8px;
-            height: 100%;
-            cursor: ew-resize;
-        }
-
-        .resize-handle.left {
-            left: -4px;
-            top: 0;
-        }
-
-        .resize-handle.right {
-            right: -4px;
-            top: 0;
-        }
-
-        .resize-handle.top-left,
-        .resize-handle.bottom-right {
-            width: 12px;
-            height: 12px;
-            cursor: nwse-resize;
-        }
-
-        .resize-handle.top-left {
-            top: -6px;
-            left: -6px;
+        /* Corner handles */
+        .resize-handle.top-left, .resize-handle.top-right,
+        .resize-handle.bottom-left, .resize-handle.bottom-right {
+            width: 14px; height: 14px;
             border-radius: 50%;
+            border: 2px solid #0f0f1a;
+            box-shadow: 0 0 0 1px rgba(129,140,248,0.3);
         }
-
-        .resize-handle.bottom-right {
-            bottom: -6px;
-            right: -6px;
-            border-radius: 50%;
+        .resize-handle.top-left:hover, .resize-handle.top-right:hover,
+        .resize-handle.bottom-left:hover, .resize-handle.bottom-right:hover {
+            box-shadow: 0 0 12px rgba(129, 140, 248, 0.8), 0 0 0 1px rgba(129,140,248,0.5);
         }
+        .resize-handle.top-left, .resize-handle.bottom-right { cursor: nwse-resize; }
+        .resize-handle.top-right, .resize-handle.bottom-left { cursor: nesw-resize; }
+        .resize-handle.top-left { top: -7px; left: -7px; }
+        .resize-handle.top-right { top: -7px; right: -7px; }
+        .resize-handle.bottom-left { bottom: -7px; left: -7px; }
+        .resize-handle.bottom-right { bottom: -7px; right: -7px; }
 
-        .resize-handle.top-right,
-        .resize-handle.bottom-left {
-            width: 12px;
-            height: 12px;
-            cursor: nesw-resize;
-        }
+        #canvas-container.drawing-disabled { cursor: default !important; }
 
-        .resize-handle.top-right {
-            top: -6px;
-            right: -6px;
-            border-radius: 50%;
-        }
+        /* ═══ Scrollbar ═══ */
+        .bs-control-panel::-webkit-scrollbar { width: 4px; }
+        .bs-control-panel::-webkit-scrollbar-track { background: transparent; }
+        .bs-control-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .bs-control-panel::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-        .resize-handle.bottom-left {
-            bottom: -6px;
-            left: -6px;
-            border-radius: 50%;
-        }
-
-        #canvas-container.drawing-disabled {
-            cursor: default !important;
+        /* ═══ Checkerboard bg ═══ */
+        .bs-canvas-area {
+            background-color: #0d1117;
+            background-image:
+                linear-gradient(45deg, #161b22 25%, transparent 25%),
+                linear-gradient(-45deg, #161b22 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #161b22 75%),
+                linear-gradient(-45deg, transparent 75%, #161b22 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
         }
     `;
     document.head.appendChild(styleTag);
 
-    // Carica l'HTML del selettore
+    // Build dialog HTML
     const innerHtml = `
-        <div class="selector-container" style="height: 100%; display: flex; flex-direction: column;">
-            <!-- Header -->
-            <div class="selector-header" style="
-                position: relative;
-                padding: 20px 25px;
-                background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-                color: white;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        <div style="height: 100%; display: flex; flex-direction: column;">
+            <!-- ═══ Header ═══ -->
+            <div style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 24px;
+                background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(59,130,246,0.08) 100%);
+                border-bottom: 1px solid rgba(255,255,255,0.06);
             ">
-                <h1 style="font-size: 24px; margin: 0 0 5px 0; font-weight: 700;">📦 Box Selector</h1>
-                <p style="font-size: 13px; opacity: 0.9; margin: 0;">Click and drag on the image to select a box</p>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 22px;">📦</span>
+                    <div>
+                        <h1 style="font-size: 16px; margin: 0; font-weight: 700; letter-spacing: -0.01em; color: #f0f2f5;">Box Selector</h1>
+                        <p style="font-size: 11px; margin: 2px 0 0 0; color: #8b95a5;">Click and drag to define region</p>
+                    </div>
+                </div>
+                <small id="image-name" style="
+                    font-size: 11px;
+                    color: #6b7280;
+                    background: rgba(255,255,255,0.04);
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    font-family: 'JetBrains Mono', monospace;
+                    max-width: 300px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                ">${imageInfo.filename}</small>
             </div>
 
-            <!-- Main Content -->
-            <div class="selector-content" style="display: flex; flex: 1; overflow: hidden;">
-                <!-- Control Panel -->
-                <div class="control-panel" style="
-                    width: 320px;
-                    background-color: #ffffff;
+            <!-- ═══ Main Content ═══ -->
+            <div style="display: flex; flex: 1; overflow: hidden;">
+                <!-- ─── Control Panel ─── -->
+                <div class="bs-control-panel" style="
+                    width: 260px;
+                    min-width: 260px;
+                    background: rgba(18, 18, 30, 0.92);
+                    backdrop-filter: blur(16px);
+                    -webkit-backdrop-filter: blur(16px);
                     overflow-y: auto;
-                    padding: 20px;
+                    padding: 20px 18px;
+                    border-right: 1px solid rgba(255,255,255,0.05);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
                 ">
-                    <h3 style="font-size: 16px; margin-bottom: 15px; font-weight: 600;">Controls</h3>
-
-                    <!-- Image info -->
-                    <div class="control-group" style="margin-bottom: 20px;">
-                        <small id="image-name" style="display: block; font-size: 12px; color: #64748b;">Image: ${imageInfo.filename}</small>
-                    </div>
-
-                    <!-- Aspect Ratio Selector -->
-                    <div style="margin-bottom: 20px;">
-                        <label for="aspect-ratio-select" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 8px;">Aspect Ratio:</label>
+                    <!-- Aspect Ratio -->
+                    <div style="margin-bottom: 8px;">
+                        <label style="
+                            display: block;
+                            font-size: 10px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.08em;
+                            color: #8b95a5;
+                            margin-bottom: 8px;
+                        ">Aspect Ratio</label>
                         <select id="aspect-ratio-select" style="
                             width: 100%;
-                            padding: 8px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 6px;
-                            font-size: 12px;
-                            background-color: white;
+                            padding: 9px 12px;
+                            border: 1px solid rgba(255,255,255,0.08);
+                            border-radius: 8px;
+                            font-size: 13px;
+                            font-family: inherit;
+                            background: rgba(255,255,255,0.04);
+                            color: #e0e4ec;
                             cursor: pointer;
+                            outline: none;
+                            transition: border-color 0.2s;
+                            appearance: none;
+                            -webkit-appearance: none;
+                            background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%238b95a5%22 stroke-width=%221.5%22 fill=%22none%22/></svg>');
+                            background-repeat: no-repeat;
+                            background-position: right 12px center;
                         ">
-                            <option value="free" selected>Custom (Free)</option>
+                            <option value="free" selected>Free</option>
                             <option value="1:1">1:1 Square</option>
                             <option value="3:4">3:4 Portrait</option>
                             <option value="5:8">5:8 Portrait</option>
@@ -1451,58 +1477,104 @@ async function openRegionDialog(node, app) {
                             <option value="16:9">16:9 Landscape</option>
                             <option value="21:9">21:9 Landscape</option>
                         </select>
-                        <small id="aspect-ratio-hint" style="display: block; margin-top: 5px; font-size: 11px; color: #64748b; font-style: italic;">Disegno libero - il ratio verrà calcolato</small>
+                        <small id="aspect-ratio-hint" style="
+                            display: block;
+                            margin-top: 6px;
+                            font-size: 11px;
+                            color: #6b7280;
+                            font-style: italic;
+                        ">Free draw — ratio calculated after</small>
                     </div>
 
-                    <!-- Reset Button -->
-                    <button id="reset-btn" class="btn" disabled style="
-                        background-color: #64748b;
-                        color: white;
-                        border: 1px solid #64748b;
-                        width: 100%;
-                        padding: 8px 12px;
-                        border-radius: 6px;
-                        font-size: 13px;
-                        font-weight: 500;
-                        cursor: pointer;
-                        opacity: 0.5;
-                        margin-bottom: 20px;
-                    ">🔄 Clear Selection</button>
+                    <!-- Divider -->
+                    <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 8px 0;"></div>
 
-                    <!-- Coordinates Info -->
+                    <!-- Reset Button -->
+                    <button id="reset-btn" disabled style="
+                        background: transparent;
+                        color: #8b95a5;
+                        border: 1px solid rgba(255,255,255,0.08);
+                        width: 100%;
+                        padding: 9px 14px;
+                        border-radius: 8px;
+                        font-size: 12px;
+                        font-weight: 500;
+                        font-family: inherit;
+                        cursor: pointer;
+                        opacity: 0.4;
+                        transition: all 0.2s ease;
+                        margin-bottom: 8px;
+                    "
+                    onmouseover="if(!this.disabled){this.style.background='rgba(239,68,68,0.1)';this.style.borderColor='rgba(239,68,68,0.3)';this.style.color='#f87171'}"
+                    onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='#8b95a5'"
+                    >🔄 Clear Selection</button>
+
+                    <!-- Divider -->
+                    <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 4px 0 8px 0;"></div>
+
+                    <!-- Selection Info -->
                     <div id="coordinates-info">
-                        <h4 style="font-size: 13px; margin-bottom: 10px; font-weight: 600; text-transform: uppercase;">Selection</h4>
-                        <div id="base-coordinates" style="
-                            background-color: transparent;
-                            padding: 12px;
-                            border-radius: 6px;
-                            font-family: monospace;
-                            font-size: 12px;
+                        <label style="
+                            display: block;
+                            font-size: 10px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.08em;
+                            color: #8b95a5;
                             margin-bottom: 10px;
+                        ">Selection Info</label>
+                        <div id="base-coordinates" style="
+                            background: rgba(255,255,255,0.03);
+                            padding: 12px 14px;
+                            border-radius: 8px;
+                            font-family: 'JetBrains Mono', monospace;
+                            font-size: 11px;
+                            line-height: 1.7;
+                            color: #8b95a5;
+                            border: 1px solid rgba(255,255,255,0.04);
                         ">
-                            <p style="margin: 0;">Click and drag to select</p>
+                            <span style="color: #6b7280;">Click and drag to select</span>
                         </div>
                         <div id="current-dimensions" style="
-                            background-color: transparent;
+                            background: transparent;
                             padding: 12px;
-                            border-radius: 6px;
-                            font-family: monospace;
-                            font-size: 12px;
+                            border-radius: 8px;
+                            font-family: 'JetBrains Mono', monospace;
+                            font-size: 11px;
                             display: none;
                         "></div>
                     </div>
 
-                    <!-- Dimensions Info -->
-                    <div id="dimensions-info" style="display: none; margin-top: 10px;"></div>
+                    <div id="dimensions-info" style="display: none; margin-top: 8px;"></div>
+
+                    <!-- Spacer -->
+                    <div style="flex: 1;"></div>
+
+                    <!-- Keyboard hints -->
+                    <div style="
+                        font-size: 10px;
+                        color: #4b5563;
+                        line-height: 1.6;
+                        padding: 10px 0 0 0;
+                        border-top: 1px solid rgba(255,255,255,0.04);
+                    ">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+                            <span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px;">Drag</span>
+                            <span>Draw selection</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px;">Handles</span>
+                            <span>Resize selection</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Canvas Area -->
-                <div class="canvas-area" style="
+                <!-- ─── Canvas Area ─── -->
+                <div class="bs-canvas-area" style="
                     flex: 1;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: #fafbfc;
                     overflow: hidden;
                     position: relative;
                 ">
@@ -1511,15 +1583,15 @@ async function openRegionDialog(node, app) {
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
-                        background-color: white;
-                        border-radius: 8px;
-                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                        background: #1a1a2e;
+                        border-radius: 6px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.04);
                         overflow: hidden;
-                        max-width: 90%;
-                        max-height: 90%;
+                        max-width: 92%;
+                        max-height: 92%;
                     ">
                         <img src="${imageUrl}" alt="Region Selector" id="background-image" 
-                            onerror="console.error('[RegionSelector] Failed to load image:', this.src); this.alt = 'Failed to load image. Check console for details.';"
+                            onerror="console.error('[RegionSelector] Failed to load image:', this.src); this.alt = 'Failed to load image';"
                             style="
                             display: block;
                             max-width: 100%;
@@ -1535,36 +1607,46 @@ async function openRegionDialog(node, app) {
     container.innerHTML = innerHtml;
     dialog.element.appendChild(container);
 
-    // Aggiungi i pulsanti d'azione
+    // Action buttons
     const confirmBtn = document.createElement("button");
-    confirmBtn.textContent = "✅ Confirm";
+    confirmBtn.textContent = "✓  Confirm Selection";
     confirmBtn.style.cssText = `
-        background-color: #16a34a;
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
         color: white;
         border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
+        padding: 11px 28px;
+        border-radius: 10px;
         cursor: pointer;
         font-weight: 600;
+        font-size: 13px;
+        font-family: inherit;
+        letter-spacing: 0.01em;
         margin-right: 10px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
     `;
+    confirmBtn.onmouseover = () => { confirmBtn.style.transform = "translateY(-1px)"; confirmBtn.style.boxShadow = "0 4px 16px rgba(34, 197, 94, 0.35)"; };
+    confirmBtn.onmouseout = () => { confirmBtn.style.transform = "translateY(0)"; confirmBtn.style.boxShadow = "0 2px 8px rgba(34, 197, 94, 0.25)"; };
 
     const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "❌ Cancel";
+    cancelBtn.textContent = "Cancel";
     cancelBtn.style.cssText = `
-        background-color: #dc2626;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
+        background: transparent;
+        color: #8b95a5;
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 11px 24px;
+        border-radius: 10px;
         cursor: pointer;
-        font-weight: 600;
+        font-weight: 500;
+        font-size: 13px;
+        font-family: inherit;
+        transition: all 0.2s ease;
     `;
+    cancelBtn.onmouseover = () => { cancelBtn.style.borderColor = "rgba(239,68,68,0.3)"; cancelBtn.style.color = "#f87171"; };
+    cancelBtn.onmouseout = () => { cancelBtn.style.borderColor = "rgba(255,255,255,0.1)"; cancelBtn.style.color = "#8b95a5"; };
 
-    // Il confirmBtn.onclick sarà impostato dopo l'inizializzazione del canvas_selector
     confirmBtn.onclick = () => {
-        console.log("[RegionSelectorExt] Confirm button clicked but CanvasSelector not ready yet");
-        alert("Per favore aspetta che il selettore sia caricato");
+        console.log("[RegionSelectorExt] Confirm clicked but CanvasSelector not ready yet");
     };
 
     cancelBtn.onclick = () => {
