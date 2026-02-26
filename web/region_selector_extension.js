@@ -1,4 +1,4 @@
-// BoxBox Extension - Modernizada para ComfyUI v1.0 / v0.12.2+
+// BoxBox Extension - Modern ComfyUI v1.0 / v0.12.2+
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
@@ -13,7 +13,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
     console.log("[CanvasSelector] Initializing with image:", imageUrl);
     console.log("[CanvasSelector] Previous metadata:", previousMetadata);
 
-    // Riferimenti agli elementi DOM (cercati dentro il container)
+    // DOM element references (searched within container)
     const canvasContainer = container.querySelector('#canvas-container');
     const backgroundImage = container.querySelector('#background-image');
     const baseCoordinates = container.querySelector('#base-coordinates');
@@ -30,7 +30,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
     const uploadBtn = container.querySelector('#upload-btn');
     const imageName = container.querySelector('#image-name');
 
-    // Variabili di stato
+    // State variables
     let isDrawing = false;
     let isResizing = false;
     let isDragging = false;
@@ -48,24 +48,24 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
     let borderPosition = 'inside';
     let rectangleExists = false;
 
-    // Dimensioni base
+    // Base dimensions
     let baseWidth = 0;
     let baseHeight = 0;
     let baseX = 0;
     let baseY = 0;
 
     // Aspect Ratio Mode
-    let aspectRatioMode = "free";        // "free" o ratio specifico (es. "16:9")
-    let aspectRatioValue = null;         // Valore numerico (es. 16/9 = 1.777)
+    let aspectRatioMode = "free";        // "free" or specific ratio (e.g. "16:9")
+    let aspectRatioValue = null;         // Numeric value (e.g. 16/9 = 1.777)
 
-    // Fix Image Size - tracking dello stato
-    let displayScaleFactor = 1.0;  // Fattore di scala applicato alla preview
-    let isImageFixed = false;       // True quando immagine è stata "fixata"
+    // Fix Image Size - state tracking
+    let displayScaleFactor = 1.0;  // Scale factor applied to preview
+    let isImageFixed = false;       // True when image has been "fixed"
 
     const defaultBorderWidth = 3;
 
     // ========================================================
-    // Ridimensionamento immagini > 1024px lato backend
+    // Backend image scaling for images > 1024px
     // ========================================================
     if (imageUrl) {
         // Parse URL parameters
@@ -81,7 +81,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
             if (filename) {
                 console.log(`[BoxBox] Requesting scale for: ${filename} (type: ${type}, subfolder: ${subfolder})`);
 
-                // Usare fetch diretto con configurazione robusta
+                // Use direct fetch with robust configuration
                 fetch("/region_selector/scale", {
                     method: "POST",
                     headers: {
@@ -104,7 +104,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
                     .then(data => {
                         if (data.path) {
                             let scaledPath = data.path;
-                            // Assicurati che il path sia convertito correttamente per l'API di ComfyUI
+                            // Ensure path is correctly converted for ComfyUI API
                             if (window.comfyAPI && window.comfyAPI.api) {
                                 try {
                                     scaledPath = window.comfyAPI.api.api.apiURL(data.path);
@@ -137,7 +137,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
         }
     }
 
-    // Disabilita drag dell'immagine
+    // Disable image drag
     backgroundImage.addEventListener('dragstart', (e) => e.preventDefault());
     backgroundImage.style.userSelect = 'none';
     canvasContainer.style.cursor = 'crosshair';
@@ -175,7 +175,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
             localStorage.setItem('boxSelector_aspectRatio', aspectRatioMode);
             console.log(`[RegionSelectorExt] Saved aspect ratio: ${aspectRatioMode}`);
 
-            // Calcola valore numerico
+            // Calculate numeric value
             const ratioMap = {
                 "free": null,
                 "1:1": 1 / 1,
@@ -191,7 +191,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
 
             aspectRatioValue = ratioMap[aspectRatioMode];
 
-            // Aggiorna hint
+            // Update hint
             if (aspectRatioMode === "free") {
                 aspectRatioHint.textContent = "Free draw — ratio calculated after";
                 aspectRatioHint.style.color = "#6b7280";
@@ -204,7 +204,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
 
             console.log(`[AspectRatio] Mode: ${aspectRatioMode}, Value: ${aspectRatioValue}`);
 
-            // Se c'è già un rettangolo e passi a modalità vincolata, adattalo
+            // If a rectangle exists and we switch to constrained mode, adjust it
             if (rectangleExists && aspectRatioValue !== null) {
                 adjustRectangleToAspectRatio();
             }
@@ -238,11 +238,11 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
     }
 
     // ========================================================
-    // FIX IMAGE SIZE - BOTTONE DINAMICO
+    // FIX IMAGE SIZE - DYNAMIC BUTTON
     // ========================================================
     function createFixImageButton() {
-        // Bottone rimosso - la scala viene applicata automaticamente
-        // Niente da fare qui
+        // Button removed - scale is applied automatically
+        // Nothing to do here
         console.log('[FixImage] Scale auto-applied, no button needed');
     }
 
@@ -313,7 +313,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
         }
     }
 
-    // Auto-fixa immagine se è grande (> 1024px)
+    // Auto-fix image if large (> 1024px)
     setTimeout(() => {
         const naturalW = backgroundImage.naturalWidth;
         const naturalH = backgroundImage.naturalHeight;
@@ -324,7 +324,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
         if (maxDim > 1024) {
             console.log('[FixImage] Large image detected, creating button and auto-fixing scale...');
             createFixImageButton();
-            // Applica la scala automaticamente
+            // Apply scale automatically
             setTimeout(() => {
                 fixImageScale();
             }, 100);
@@ -394,9 +394,9 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
         }, 600); // Wait a bit longer than the auto-fix to ensure everything is ready
     }
 
-    // Mouse down - inizio disegno o drag
+    // Mouse down - start drawing or dragging
     canvasContainer.addEventListener('mousedown', (e) => {
-        // Se il rettangolo esiste e clicchi su di esso (non su un handle), inizia il drag
+        // If rectangle exists and clicked on it (not a handle), start drag
         if (rectangleExists && e.target === currentRectangle) {
             isDragging = true;
             const rect = canvasContainer.getBoundingClientRect();
@@ -448,7 +448,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
 
     // Mouse move
     document.addEventListener('mousemove', (e) => {
-        // Drag del rettangolo
+        // Rectangle drag
         if (isDragging && currentRectangle) {
             const rect = canvasContainer.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
@@ -457,7 +457,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
             let newLeft = mouseX - dragOffsetX;
             let newTop = mouseY - dragOffsetY;
 
-            // Vincola il rettangolo dentro il canvas
+            // Constrain rectangle within canvas
             const maxLeft = rect.width - parseFloat(currentRectangle.style.width);
             const maxTop = rect.height - parseFloat(currentRectangle.style.height);
 
@@ -485,7 +485,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
 
             // ⚙️ APPLICA VINCOLO SE NECESSARIO
             if (aspectRatioValue !== null) {
-                // Modalità vincolata: forza l'aspect ratio
+                // Constrained mode: force aspect ratio
                 if (Math.abs(width) / aspectRatioValue > Math.abs(height)) {
                     height = (Math.abs(width) / aspectRatioValue) * (height < 0 ? -1 : 1);
                 } else {
@@ -771,10 +771,10 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
     function adjustRectangleToAspectRatio() {
         if (!aspectRatioValue || !rectangleExists || !currentRectangle) return;
 
-        // Mantieni larghezza, adatta altezza al ratio
+        // Keep width, adjust height to ratio
         baseHeight = baseWidth / aspectRatioValue;
 
-        // Aggiorna visualizzazione
+        // Update display
         currentRectangle.style.width = baseWidth + 'px';
         currentRectangle.style.height = baseHeight + 'px';
 
@@ -824,7 +824,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
         let aspectRatioDisplay;
 
         if (aspectRatioMode === "free") {
-            // Lista aspect ratio standard
+            // Standard aspect ratio list
             const standardRatios = [
                 { value: 21 / 9, label: "21:9 Landscape", display: "21:9" },
                 { value: 16 / 9, label: "16:9 Landscape", display: "16:9" },
@@ -851,15 +851,15 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
 
             const diffPercent = (minDiff / ratio) * 100;
 
-            // Formato display basato su vicinanza
+            // Display format based on proximity
             if (diffPercent < 3) {
-                // Molto vicino - mostra come esatto
+                // Very close - show as exact
                 aspectRatioDisplay = `<span style="color: #4ade80; font-weight: 600;">✓ ${closestRatio.label}</span>`;
             } else if (diffPercent < 8) {
-                // Abbastanza vicino - mostra approssimato
+                // Reasonably close - show approximate
                 aspectRatioDisplay = `<span style="color: #fb923c; font-weight: 600;">~ ${closestRatio.label}</span> <span style="opacity: 0.5; font-size: 10px;">(${ratio.toFixed(2)}:1)</span>`;
             } else {
-                // Troppo diverso - mostra custom + più vicino
+                // Too different - show custom + nearest
                 aspectRatioDisplay = `<span style="color: #818cf8; font-weight: 600;">${ratio.toFixed(2)}:1</span> <span style="opacity: 0.45; font-size: 10px;">(≈ ${closestRatio.display})</span>`;
             }
         } else {
@@ -1388,217 +1388,210 @@ async function openRegionDialog(node, app) {
     `;
     document.head.appendChild(styleTag);
 
-    // Build dialog HTML
+    // Build dialog HTML — single sidebar + canvas, no header
     const innerHtml = `
-        <div style="height: 100%; display: flex; flex-direction: column;">
-            <!-- ═══ Header ═══ -->
-            <div style="
+        <div style="height: 100%; display: flex; overflow: hidden;">
+            <!-- ─── Single Left Column ─── -->
+            <div class="bs-control-panel" style="
+                width: 260px;
+                min-width: 260px;
+                background: rgba(18, 18, 30, 0.92);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                overflow-y: auto;
+                padding: 20px 18px;
+                border-right: 1px solid rgba(255,255,255,0.05);
                 display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 14px 24px;
-                background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(59,130,246,0.08) 100%);
-                border-bottom: 1px solid rgba(255,255,255,0.06);
+                flex-direction: column;
+                gap: 4px;
             ">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 22px;">📦</span>
+                <!-- Title -->
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <span style="font-size: 20px;">📦</span>
                     <div>
-                        <h1 style="font-size: 16px; margin: 0; font-weight: 700; letter-spacing: -0.01em; color: #f0f2f5;">Box Selector</h1>
-                        <p style="font-size: 11px; margin: 2px 0 0 0; color: #8b95a5;">Click and drag to define region</p>
+                        <h1 style="font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -0.01em; color: #f0f2f5;">Box Selector</h1>
+                        <p style="font-size: 10px; margin: 2px 0 0 0; color: #6b7280;">Click and drag to define region</p>
                     </div>
                 </div>
-                <small id="image-name" style="
-                    font-size: 11px;
-                    color: #6b7280;
-                    background: rgba(255,255,255,0.04);
-                    padding: 4px 10px;
+
+                <!-- Filename -->
+                <div id="image-name" style="
+                    font-size: 10px;
+                    color: #4b5563;
+                    background: rgba(255,255,255,0.03);
+                    padding: 5px 10px;
                     border-radius: 6px;
                     font-family: 'JetBrains Mono', monospace;
-                    max-width: 300px;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
-                ">${imageInfo.filename}</small>
-            </div>
+                    margin-bottom: 4px;
+                ">${imageInfo.filename}</div>
 
-            <!-- ═══ Main Content ═══ -->
-            <div style="display: flex; flex: 1; overflow: hidden;">
-                <!-- ─── Control Panel ─── -->
-                <div class="bs-control-panel" style="
-                    width: 260px;
-                    min-width: 260px;
-                    background: rgba(18, 18, 30, 0.92);
-                    backdrop-filter: blur(16px);
-                    -webkit-backdrop-filter: blur(16px);
-                    overflow-y: auto;
-                    padding: 20px 18px;
-                    border-right: 1px solid rgba(255,255,255,0.05);
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                ">
-                    <!-- Aspect Ratio -->
-                    <div style="margin-bottom: 8px;">
-                        <label style="
-                            display: block;
-                            font-size: 10px;
-                            font-weight: 600;
-                            text-transform: uppercase;
-                            letter-spacing: 0.08em;
-                            color: #8b95a5;
-                            margin-bottom: 8px;
-                        ">Aspect Ratio</label>
-                        <select id="aspect-ratio-select" style="
-                            width: 100%;
-                            padding: 9px 12px;
-                            border: 1px solid rgba(255,255,255,0.08);
-                            border-radius: 8px;
-                            font-size: 13px;
-                            font-family: inherit;
-                            background: rgba(255,255,255,0.04);
-                            color: #e0e4ec;
-                            cursor: pointer;
-                            outline: none;
-                            transition: border-color 0.2s;
-                            appearance: none;
-                            -webkit-appearance: none;
-                            background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%238b95a5%22 stroke-width=%221.5%22 fill=%22none%22/></svg>');
-                            background-repeat: no-repeat;
-                            background-position: right 12px center;
-                        ">
-                            <option value="free" selected>Free</option>
-                            <option value="1:1">1:1 Square</option>
-                            <option value="3:4">3:4 Portrait</option>
-                            <option value="5:8">5:8 Portrait</option>
-                            <option value="9:16">9:16 Portrait</option>
-                            <option value="9:21">9:21 Portrait</option>
-                            <option value="4:3">4:3 Landscape</option>
-                            <option value="3:2">3:2 Landscape</option>
-                            <option value="16:9">16:9 Landscape</option>
-                            <option value="21:9">21:9 Landscape</option>
-                        </select>
-                        <small id="aspect-ratio-hint" style="
-                            display: block;
-                            margin-top: 6px;
-                            font-size: 11px;
-                            color: #6b7280;
-                            font-style: italic;
-                        ">Free draw — ratio calculated after</small>
-                    </div>
+                <!-- Divider -->
+                <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 6px 0;"></div>
 
-                    <!-- Divider -->
-                    <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 8px 0;"></div>
-
-                    <!-- Reset Button -->
-                    <button id="reset-btn" disabled style="
-                        background: transparent;
-                        color: #8b95a5;
-                        border: 1px solid rgba(255,255,255,0.08);
-                        width: 100%;
-                        padding: 9px 14px;
-                        border-radius: 8px;
-                        font-size: 12px;
-                        font-weight: 500;
-                        font-family: inherit;
-                        cursor: pointer;
-                        opacity: 0.4;
-                        transition: all 0.2s ease;
-                        margin-bottom: 8px;
-                    "
-                    onmouseover="if(!this.disabled){this.style.background='rgba(239,68,68,0.1)';this.style.borderColor='rgba(239,68,68,0.3)';this.style.color='#f87171'}"
-                    onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='#8b95a5'"
-                    >🔄 Clear Selection</button>
-
-                    <!-- Divider -->
-                    <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 4px 0 8px 0;"></div>
-
-                    <!-- Selection Info -->
-                    <div id="coordinates-info">
-                        <label style="
-                            display: block;
-                            font-size: 10px;
-                            font-weight: 600;
-                            text-transform: uppercase;
-                            letter-spacing: 0.08em;
-                            color: #8b95a5;
-                            margin-bottom: 10px;
-                        ">Selection Info</label>
-                        <div id="base-coordinates" style="
-                            background: rgba(255,255,255,0.03);
-                            padding: 12px 14px;
-                            border-radius: 8px;
-                            font-family: 'JetBrains Mono', monospace;
-                            font-size: 11px;
-                            line-height: 1.7;
-                            color: #8b95a5;
-                            border: 1px solid rgba(255,255,255,0.04);
-                        ">
-                            <span style="color: #6b7280;">Click and drag to select</span>
-                        </div>
-                        <div id="current-dimensions" style="
-                            background: transparent;
-                            padding: 12px;
-                            border-radius: 8px;
-                            font-family: 'JetBrains Mono', monospace;
-                            font-size: 11px;
-                            display: none;
-                        "></div>
-                    </div>
-
-                    <div id="dimensions-info" style="display: none; margin-top: 8px;"></div>
-
-                    <!-- Spacer -->
-                    <div style="flex: 1;"></div>
-
-                    <!-- Keyboard hints -->
-                    <div style="
+                <!-- Aspect Ratio -->
+                <div style="margin-bottom: 4px;">
+                    <label style="
+                        display: block;
                         font-size: 10px;
-                        color: #4b5563;
-                        line-height: 1.6;
-                        padding: 10px 0 0 0;
-                        border-top: 1px solid rgba(255,255,255,0.04);
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.08em;
+                        color: #8b95a5;
+                        margin-bottom: 8px;
+                    ">Aspect Ratio</label>
+                    <select id="aspect-ratio-select" style="
+                        width: 100%;
+                        padding: 9px 12px;
+                        border: 1px solid rgba(255,255,255,0.08);
+                        border-radius: 8px;
+                        font-size: 13px;
+                        font-family: inherit;
+                        background: rgba(255,255,255,0.04);
+                        color: #e0e4ec;
+                        cursor: pointer;
+                        outline: none;
+                        transition: border-color 0.2s;
+                        appearance: none;
+                        -webkit-appearance: none;
+                        background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%238b95a5%22 stroke-width=%221.5%22 fill=%22none%22/></svg>');
+                        background-repeat: no-repeat;
+                        background-position: right 12px center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
-                            <span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px;">Drag</span>
-                            <span>Draw selection</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px;">Handles</span>
-                            <span>Resize selection</span>
-                        </div>
-                    </div>
+                        <option value="free" selected>Free</option>
+                        <option value="1:1">1:1 Square</option>
+                        <option value="3:4">3:4 Portrait</option>
+                        <option value="5:8">5:8 Portrait</option>
+                        <option value="9:16">9:16 Portrait</option>
+                        <option value="9:21">9:21 Portrait</option>
+                        <option value="4:3">4:3 Landscape</option>
+                        <option value="3:2">3:2 Landscape</option>
+                        <option value="16:9">16:9 Landscape</option>
+                        <option value="21:9">21:9 Landscape</option>
+                    </select>
+                    <small id="aspect-ratio-hint" style="
+                        display: block;
+                        margin-top: 6px;
+                        font-size: 11px;
+                        color: #6b7280;
+                        font-style: italic;
+                    ">Free draw — ratio calculated after</small>
                 </div>
 
-                <!-- ─── Canvas Area ─── -->
-                <div class="bs-canvas-area" style="
-                    flex: 1;
-                    display: flex;
+                <!-- Divider -->
+                <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 6px 0;"></div>
+
+                <!-- Reset Button -->
+                <button id="reset-btn" disabled style="
+                    background: transparent;
+                    color: #8b95a5;
+                    border: 1px solid rgba(255,255,255,0.08);
+                    width: 100%;
+                    padding: 9px 14px;
+                    border-radius: 8px;
+                    font-size: 12px;
+                    font-weight: 500;
+                    font-family: inherit;
+                    cursor: pointer;
+                    opacity: 0.4;
+                    transition: all 0.2s ease;
+                    margin-bottom: 4px;
+                "
+                onmouseover="if(!this.disabled){this.style.background='rgba(239,68,68,0.1)';this.style.borderColor='rgba(239,68,68,0.3)';this.style.color='#f87171'}"
+                onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='#8b95a5'"
+                >🔄 Clear Selection</button>
+
+                <!-- Divider -->
+                <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 4px 0 6px 0;"></div>
+
+                <!-- Selection Info -->
+                <div id="coordinates-info">
+                    <label style="
+                        display: block;
+                        font-size: 10px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.08em;
+                        color: #8b95a5;
+                        margin-bottom: 10px;
+                    ">Selection Info</label>
+                    <div id="base-coordinates" style="
+                        background: rgba(255,255,255,0.03);
+                        padding: 12px 14px;
+                        border-radius: 8px;
+                        font-family: 'JetBrains Mono', monospace;
+                        font-size: 11px;
+                        line-height: 1.7;
+                        color: #8b95a5;
+                        border: 1px solid rgba(255,255,255,0.04);
+                    ">
+                        <span style="color: #6b7280;">Click and drag to select</span>
+                    </div>
+                    <div id="current-dimensions" style="
+                        background: transparent;
+                        padding: 12px;
+                        border-radius: 8px;
+                        font-family: 'JetBrains Mono', monospace;
+                        font-size: 11px;
+                        display: none;
+                    "></div>
+                </div>
+
+                <div id="dimensions-info" style="display: none; margin-top: 8px;"></div>
+
+                <!-- Spacer -->
+                <div style="flex: 1;"></div>
+
+                <!-- Keyboard hints -->
+                <div style="
+                    font-size: 10px;
+                    color: #4b5563;
+                    line-height: 1.6;
+                    padding: 10px 0 0 0;
+                    border-top: 1px solid rgba(255,255,255,0.04);
+                ">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+                        <span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px;">Drag</span>
+                        <span>Draw selection</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px;">Handles</span>
+                        <span>Resize selection</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── Canvas Area ─── -->
+            <div class="bs-canvas-area" style="
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                position: relative;
+            ">
+                <div id="canvas-container" style="
+                    position: relative;
+                    display: inline-flex;
                     align-items: center;
                     justify-content: center;
+                    background: #1a1a2e;
+                    border-radius: 6px;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.04);
                     overflow: hidden;
-                    position: relative;
+                    max-width: 95%;
+                    max-height: 95%;
                 ">
-                    <div id="canvas-container" style="
-                        position: relative;
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        background: #1a1a2e;
-                        border-radius: 6px;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.04);
-                        overflow: hidden;
-                        max-width: 92%;
-                        max-height: 92%;
+                    <img src="${imageUrl}" alt="Region Selector" id="background-image" 
+                        onerror="console.error('[RegionSelector] Failed to load image:', this.src); this.alt = 'Failed to load image';"
+                        style="
+                        display: block;
+                        max-width: 100%;
+                        max-height: 100%;
+                        user-select: none;
                     ">
-                        <img src="${imageUrl}" alt="Region Selector" id="background-image" 
-                            onerror="console.error('[RegionSelector] Failed to load image:', this.src); this.alt = 'Failed to load image';"
-                            style="
-                            display: block;
-                            max-width: 100%;
-                            max-height: 100%;
-                            user-select: none;
-                        ">
-                    </div>
                 </div>
             </div>
         </div>
