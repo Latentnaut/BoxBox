@@ -477,8 +477,8 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
 
         if (isDrawing) {
             const rect = canvasContainer.getBoundingClientRect();
-            const currentX = e.clientX - rect.left;
-            const currentY = e.clientY - rect.top;
+            const currentX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+            const currentY = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
 
             let width = currentX - startX;
             let height = currentY - startY;
@@ -519,8 +519,13 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
 
             switch (resizingEdge) {
                 case 'bottom-right':
-                    let brNewWidth = rectStartWidth + deltaX;
-                    let brNewHeight = rectStartHeight + deltaY;
+                    const maxDeltaX = rect.width - rectStartX - rectStartWidth;
+                    const maxDeltaY = rect.height - rectStartY - rectStartHeight;
+                    const minDeltaX = -rectStartWidth + 1;
+                    const minDeltaY = -rectStartHeight + 1;
+
+                    let brNewWidth = rectStartWidth + Math.max(minDeltaX, Math.min(deltaX, maxDeltaX));
+                    let brNewHeight = rectStartHeight + Math.max(minDeltaY, Math.min(deltaY, maxDeltaY));
 
                     // ⚙️ APPLICA VINCOLO SE NECESSARIO
                     if (aspectRatioValue !== null) {
@@ -540,9 +545,17 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
                     break;
 
                 case 'bottom-left':
-                    let blNewLeft = rectStartX + deltaX;
-                    let blNewHeight = rectStartHeight + deltaY;
-                    let blNewWidth = rectStartWidth - deltaX;
+                    const maxDeltaX_bl = rectStartX;
+                    const maxDeltaY_bl = rect.height - rectStartY - rectStartHeight;
+                    const minDeltaX_bl = -(rect.width - rectStartX - rectStartWidth); // actually we want to constrain left movement
+
+                    // Constrain deltaX so newLeft >= 0 and newWidth > 0
+                    const clampedDeltaX_bl = Math.max(-rectStartX, Math.min(deltaX, rectStartWidth - 1));
+                    const clampedDeltaY_bl = Math.max(-rectStartY, Math.min(deltaY, rect.height - rectStartY - rectStartHeight));
+
+                    let blNewLeft = rectStartX + clampedDeltaX_bl;
+                    let blNewHeight = rectStartHeight + clampedDeltaY_bl;
+                    let blNewWidth = rectStartWidth - clampedDeltaX_bl;
 
                     // ⚙️ APPLICA VINCOLO SE NECESSARIO
                     if (aspectRatioValue !== null) {
@@ -565,9 +578,12 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
                     break;
 
                 case 'top-right':
-                    let trNewTop = rectStartY + deltaY;
-                    let trNewHeight = rectStartHeight - deltaY;
-                    let trNewWidth = rectStartWidth + deltaX;
+                    const clampedDeltaX_tr = Math.max(-rectStartWidth + 1, Math.min(deltaX, rect.width - rectStartX - rectStartWidth));
+                    const clampedDeltaY_tr = Math.max(-rectStartY, Math.min(deltaY, rectStartHeight - 1));
+
+                    let trNewTop = rectStartY + clampedDeltaY_tr;
+                    let trNewHeight = rectStartHeight - clampedDeltaY_tr;
+                    let trNewWidth = rectStartWidth + clampedDeltaX_tr;
 
                     // ⚙️ APPLICA VINCOLO SE NECESSARIO
                     if (aspectRatioValue !== null) {
@@ -590,10 +606,13 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
                     break;
 
                 case 'top-left':
-                    let tlNewTop = rectStartY + deltaY;
-                    let tlNewLeft = rectStartX + deltaX;
-                    let tlNewHeight = rectStartHeight - deltaY;
-                    let tlNewWidth = rectStartWidth - deltaX;
+                    const clampedDeltaX_tl = Math.max(-rectStartX, Math.min(deltaX, rectStartWidth - 1));
+                    const clampedDeltaY_tl = Math.max(-rectStartY, Math.min(deltaY, rectStartHeight - 1));
+
+                    let tlNewTop = rectStartY + clampedDeltaY_tl;
+                    let tlNewLeft = rectStartX + clampedDeltaX_tl;
+                    let tlNewHeight = rectStartHeight - clampedDeltaY_tl;
+                    let tlNewWidth = rectStartWidth - clampedDeltaX_tl;
 
                     // ⚙️ APPLICA VINCOLO SE NECESSARIO
                     if (aspectRatioValue !== null) {
@@ -951,7 +970,6 @@ app.registerExtension({
         if (nodeData.name && nodeData.name.includes("Box")) {
             console.log(`[BoxBox] Checking node: ${nodeData.name}`);
         }
-
         if (nodeData.name !== "BoxSelector") return;
 
         console.log("[BoxBox] Found BoxSelector node! Adding button...");
@@ -961,25 +979,92 @@ app.registerExtension({
             const r = onNodeCreated?.apply(this, arguments);
             const node = this;
 
-            console.log("[BoxBox] Node instance created, attaching button widgets...");
+            console.log("[BoxBox] Node instance created, attaching reordered widgets...");
 
-            // Button 1: Image Cache — executes only the BoxSelector subgraph
-            // and shows a preview image on the node (like PreviewBridge)
-            this.addWidget("button", "🖼️ Image Cache", null, async () => {
-                console.log("[BoxBox] Image Cache clicked, auto-executing subgraph...");
+            // 1. Prepare buttons
+            const cacheBtn = this.addWidget("button", "🖼️ Image Cache", null, async () => {
+                console.log("[BoxBox] Image Cache clicked");
                 const success = await autoExecuteForPreview(node, app);
-                if (!success) {
-                    alert("⚠️ Could not generate preview.\n\nMake sure an image source is connected.");
-                }
+                if (!success) alert("⚠️ Could not generate preview.");
             });
 
-            // Button 2: Select Box — opens the region selector dialog
-            this.addWidget("button", "📦 Select Box", null, () => {
-                console.log("[BoxBox] Select Box clicked!");
+            const selectBtn = this.addWidget("button", "📦 Select Box", null, () => {
                 openRegionDialog(node, app);
             });
 
+            // 2. Prepare custom preview widget
+            const previewWidget = {
+                name: "image_preview",
+                type: "image_preview",
+                value: null, // Stores the image URL
+                _img: null,  // Cached Image object
+                draw(ctx, node, widget_width, y, widget_height) {
+                    if (!this.value) return;
+
+                    if (!this._img || this._img.src !== this.value) {
+                        this._img = new Image();
+                        this._img.src = this.value;
+                        this._img.onload = () => node.setDirtyCanvas(true);
+                    }
+
+                    if (this._img.complete && this._img.naturalWidth > 0) {
+                        const margin = 10;
+                        const w = widget_width - margin * 2;
+                        const h = widget_height - margin * 2;
+                        const aspect = this._img.naturalWidth / this._img.naturalHeight;
+
+                        let drawW = w;
+                        let drawH = w / aspect;
+
+                        if (drawH > h) {
+                            drawH = h;
+                            drawW = h * aspect;
+                        }
+
+                        const offsetX = (w - drawW) / 2 + margin;
+                        const offsetY = (h - drawH) / 2 + margin;
+
+                        ctx.drawImage(this._img, offsetX, y + offsetY, drawW, drawH);
+                    }
+                },
+                computeSize() {
+                    return [Math.max(220, this.width || 0), 200];
+                }
+            };
+            this.addCustomWidget(previewWidget);
+
+            // 3. Reorder widgets: [CacheBtn, SelectBtn, PreviewWidget, box_metadata]
+            // ComfyUI might have added box_metadata already (it's an optional input)
+            const metadataWidget = this.widgets.find(w => w.name === "box_metadata");
+            const otherWidgets = this.widgets.filter(w =>
+                w !== cacheBtn && w !== selectBtn && w !== previewWidget && w !== metadataWidget
+            );
+
+            // Set final order
+            const finalWidgets = [cacheBtn, selectBtn, previewWidget];
+            if (metadataWidget) finalWidgets.push(metadataWidget);
+            if (otherWidgets.length > 0) finalWidgets.push(...otherWidgets);
+
+            this.widgets = finalWidgets;
+
             return r;
+        };
+
+        // Add execution handler to update node preview widget
+        const onExecuted = nodeType.prototype.onExecuted;
+        nodeType.prototype.onExecuted = function (message) {
+            onExecuted?.apply(this, arguments);
+
+            if (message?.images && message.images.length > 0) {
+                const img = message.images[0];
+                const url = api.apiURL(`/view?filename=${img.filename}&type=${img.type}&subfolder=${img.subfolder}`);
+
+                const previewWidget = this.widgets.find(w => w.name === "image_preview");
+                if (previewWidget) {
+                    previewWidget.value = url;
+                    this.setDirtyCanvas(true);
+                }
+            }
         };
     },
 });
@@ -1301,11 +1386,11 @@ async function openRegionDialog(node, app) {
             z-index: 10;
         }
         .rectangle.border-inside {
-            border: 2px solid #818cf8;
+            border: 2px dashed #818cf8;
             box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.15), inset 0 0 20px rgba(99, 102, 241, 0.06);
         }
         .rectangle.border-outside {
-            outline: 2px solid #818cf8;
+            outline: 2px dashed #818cf8;
             outline-offset: 0px;
         }
         .rectangle.thick-border {
