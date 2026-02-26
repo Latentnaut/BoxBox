@@ -26,7 +26,7 @@ let aspectRatioValue = null;         // Valore numerico (es. 16/9 = 1.777)
 
 // Fix Image Size - tracking dello stato
 let displayScaleFactor = 1.0;  // Fattore di scala applicato alla preview
-let isImageFixed = false;       // True quando immagine è stata "fixata"
+let isImageFixed = false;       // True when image has been "fixed"
 
 // ============================================================================
 // INIT
@@ -58,33 +58,33 @@ document.addEventListener('DOMContentLoaded', () => {
       // Calcola valore numerico
       const ratioMap = {
         "free": null,
-        "1:1": 1/1,
-        "3:4": 3/4,
-        "5:8": 5/8,
-        "9:16": 9/16,
-        "9:21": 9/21,
-        "4:3": 4/3,
-        "3:2": 3/2,
-        "16:9": 16/9,
-        "21:9": 21/9,
+        "1:1": 1 / 1,
+        "3:4": 3 / 4,
+        "5:8": 5 / 8,
+        "9:16": 9 / 16,
+        "9:21": 9 / 21,
+        "4:3": 4 / 3,
+        "3:2": 3 / 2,
+        "16:9": 16 / 9,
+        "21:9": 21 / 9,
       };
 
       aspectRatioValue = ratioMap[aspectRatioMode];
 
       // Aggiorna hint
       if (aspectRatioMode === "free") {
-        aspectRatioHint.textContent = "Disegno libero - il ratio verrà calcolato";
+        aspectRatioHint.textContent = "Free draw — ratio calculated after";
         aspectRatioHint.style.color = "#64748b";
         aspectRatioHint.style.fontWeight = "normal";
       } else {
-        aspectRatioHint.textContent = `Rettangolo vincolato a ${aspectRatioMode}`;
+        aspectRatioHint.textContent = `Constrained to ${aspectRatioMode}`;
         aspectRatioHint.style.color = "#16a34a";
         aspectRatioHint.style.fontWeight = "600";
       }
 
       console.log(`[AspectRatio] Mode: ${aspectRatioMode}, Value: ${aspectRatioValue}`);
 
-      // Se c'è già un rettangolo e passi a modalità vincolata, adattalo
+      // If a rectangle exists and we switch to constrained mode, adjust it
       if (rectangleExists && aspectRatioValue !== null) {
         adjustRectangleToAspectRatio();
       }
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Salva i metadati
     backgroundImage.dataset.originalScale = scaleFactor;
 
-    // 🆕 Crea bottone Fix Image Size se immagine è più grande di 1024
+    // 🆕 Create Fix Image Size button if image is larger than 1024px
     const maxDim = Math.max(naturalW, naturalH);
     console.log(`[FixImage] maxDim = ${maxDim}, condition (>1024) = ${maxDim > 1024}`);
 
@@ -222,7 +222,7 @@ function handleMouseMove(e) {
 
   // ⚙️ APPLICA VINCOLO SE NECESSARIO
   if (aspectRatioValue !== null) {
-    // Modalità vincolata: forza l'aspect ratio
+    // Constrained mode: force aspect ratio
     // Mantieni la dimensione maggiore e adatta l'altra
     if (newWidth / aspectRatioValue > newHeight) {
       newHeight = newWidth / aspectRatioValue;
@@ -230,7 +230,7 @@ function handleMouseMove(e) {
       newWidth = newHeight * aspectRatioValue;
     }
   }
-  // Altrimenti modalità "free": usa dimensioni naturali
+  // Otherwise "free" mode: use natural dimensions
 
   baseWidth = newWidth;
   baseHeight = newHeight;
@@ -258,7 +258,7 @@ function updateDimensionsDisplay() {
   }
 
   if (!rectangleExists || baseWidth === 0 || baseHeight === 0) {
-    baseCoordinatesDiv.innerHTML = `<p>Clicca e trascina sull'immagine per selezionare una regione</p>`;
+    baseCoordinatesDiv.innerHTML = `<p>Click and drag on the image to select a region</p>`;
     return;
   }
 
@@ -266,24 +266,24 @@ function updateDimensionsDisplay() {
   const h = Math.round(baseHeight);
   const ratio = w / h;
 
-  // 🎯 MODALITÀ CUSTOM: Calcola approssimazione
+  // 🎯 CUSTOM MODE: Calculate approximation
   let aspectRatioDisplay;
 
   if (aspectRatioMode === "free") {
     // Lista aspect ratio standard
     const standardRatios = [
-      { value: 21/9, label: "21:9 Landscape", display: "21:9" },
-      { value: 16/9, label: "16:9 Landscape", display: "16:9" },
-      { value: 3/2, label: "3:2 Landscape", display: "3:2" },
-      { value: 4/3, label: "4:3 Landscape", display: "4:3" },
-      { value: 1/1, label: "1:1 Square", display: "1:1" },
-      { value: 3/4, label: "3:4 Portrait", display: "3:4" },
-      { value: 5/8, label: "5:8 Portrait", display: "5:8" },
-      { value: 9/16, label: "9:16 Portrait", display: "9:16" },
-      { value: 9/21, label: "9:21 Portrait", display: "9:21" },
+      { value: 21 / 9, label: "21:9 Landscape", display: "21:9" },
+      { value: 16 / 9, label: "16:9 Landscape", display: "16:9" },
+      { value: 3 / 2, label: "3:2 Landscape", display: "3:2" },
+      { value: 4 / 3, label: "4:3 Landscape", display: "4:3" },
+      { value: 1 / 1, label: "1:1 Square", display: "1:1" },
+      { value: 3 / 4, label: "3:4 Portrait", display: "3:4" },
+      { value: 5 / 8, label: "5:8 Portrait", display: "5:8" },
+      { value: 9 / 16, label: "9:16 Portrait", display: "9:16" },
+      { value: 9 / 21, label: "9:21 Portrait", display: "9:21" },
     ];
 
-    // Trova il più vicino
+    // Find the closest
     let closestRatio = standardRatios[0];
     let minDiff = Math.abs(ratio - standardRatios[0].value);
 
@@ -305,11 +305,11 @@ function updateDimensionsDisplay() {
       // Abbastanza vicino - mostra approssimato
       aspectRatioDisplay = `<span style="color: #ea580c; font-weight: bold;">~ ${closestRatio.label}</span> <span style="opacity: 0.6; font-size: 11px;">(${ratio.toFixed(2)}:1)</span>`;
     } else {
-      // Troppo diverso - mostra custom + più vicino
+      // Too different - show custom + nearest
       aspectRatioDisplay = `<span style="color: #2563eb; font-weight: bold;">${ratio.toFixed(2)}:1</span> <span style="opacity: 0.5; font-size: 11px;">(vicino: ${closestRatio.display})</span>`;
     }
   } else {
-    // 🔒 MODALITÀ VINCOLATA: Mostra il vincolo attivo
+    // 🔒 CONSTRAINED MODE: Show active constraint
     aspectRatioDisplay = `<span style="color: #16a34a; font-weight: bold;">🔒 ${aspectRatioMode}</span> <span style="opacity: 0.6; font-size: 11px;">(${ratio.toFixed(2)}:1)</span>`;
   }
 
@@ -354,7 +354,7 @@ function getCoordinates() {
   const scaleFactor = parseFloat(backgroundImage.dataset.originalScale || "1");
 
   // Le coordinate baseX, baseY, baseWidth, baseHeight sono relative all'immagine visualizzata
-  // Se l'immagine è stata scalata dal backend, devi applicare il fattore di scala inverso
+  // If image was scaled by backend, apply inverse scale factor
   // Per ottenere le coordinate dell'immagine ORIGINALE (prima del scaling)
 
   const coords = {
@@ -395,7 +395,7 @@ function handleCancel() {
  * Crea dinamicamente il bottone "Fix Image Size" nel panel di controllo.
  */
 function createFixImageButton() {
-  // Controlla se bottone esiste già
+  // Check if button already exists
   if (document.getElementById('fix-image-btn')) {
     console.log('[FixImage] Button already exists');
     return;
@@ -452,7 +452,7 @@ function fixImageScale() {
   const maxCurrent = Math.max(naturalW, naturalH);
 
   if (maxCurrent <= maxDim) {
-    alert("✓ Immagine già piccola (max: " + maxCurrent + "px)!");
+    alert("✓ Image is already small (max: " + maxCurrent + "px)!");
     return;
   }
 
@@ -559,7 +559,7 @@ function showAutoFixSuggestion(maxDimension) {
         ⚠️ Immagine molto grande (${maxDimension} px)
     </p>
     <p style="font-size: 11px; color: #64748b;">
-        Per una selezione più fluida, clicca il bottone "Fix Image Size" qui sotto
+        For a smoother selection, click the "Fix Image Size" button below
     </p>
   `;
   suggestion.style.display = 'block';

@@ -63,7 +63,7 @@ let onCancelCallback = null;
 // INITIALIZATION
 // ============================================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeEventListeners();
 });
 
@@ -112,12 +112,12 @@ function handleImageUpload(e) {
     if (file && file.type.startsWith('image/')) {
         const reader = new FileReader();
 
-        reader.onload = function(event) {
+        reader.onload = function (event) {
             backgroundImage.src = event.target.result;
             imageName.textContent = `Immagine corrente: ${file.name}`;
 
             if (currentRectangle) {
-                if (confirm('Cambiando immagine il rettangolo verrà cancellato. Continuare?')) {
+                if (confirm('Changing image will clear the selection. Continue?')) {
                     resetRectangle();
                 } else {
                     imageUpload.value = '';
@@ -150,7 +150,7 @@ function handleCanvasMouseDown(e) {
     const imgX = e.clientX - imgRect.left;
     const imgY = e.clientY - imgRect.top;
 
-    // Se il click è fuori dall'immagine, non fare nulla
+    // If click is outside image, do nothing
     if (imgX < 0 || imgY < 0 || imgX > imgRect.width || imgY > imgRect.height) {
         return;
     }
@@ -159,7 +159,7 @@ function handleCanvasMouseDown(e) {
     const realImgX = imgX * scaleX;
     const realImgY = imgY * scaleY;
 
-    // Verifica se stai ridimensionando
+    // Check if resizing
     if (currentRectangle) {
         const handleRect = detectResizeHandle(e, currentRectangle);
         if (handleRect) {
@@ -175,7 +175,7 @@ function handleCanvasMouseDown(e) {
             return;
         }
 
-        // Verifica se stai spostando il rettangolo
+        // Check if moving rectangle
         if (isClickInsideRectangle(e, currentRectangle, imgRect)) {
             isDrawing = true;
             startX = e.clientX;
@@ -186,7 +186,7 @@ function handleCanvasMouseDown(e) {
         }
     }
 
-    // Inizia nuovo rettangolo (usando coordinate reali)
+    // Start new rectangle (using real coordinates)
     isDrawing = true;
     startX = realImgX;
     startY = realImgY;
@@ -247,7 +247,7 @@ function handleMouseUp(e) {
 }
 
 function createNewRectangle(x, y, width, height) {
-    // Rimuovi il vecchio rettangolo se esiste
+    // Remove old rectangle if exists
     if (currentRectangle) {
         currentRectangle.remove();
     }
@@ -347,9 +347,9 @@ function handleResizeRectangle(e, imgRect, scaleX, scaleY) {
 function isClickInsideRectangle(e, rect, imgRect) {
     const rectBounds = rect.getBoundingClientRect();
     return e.clientX >= rectBounds.left &&
-           e.clientX <= rectBounds.right &&
-           e.clientY >= rectBounds.top &&
-           e.clientY <= rectBounds.bottom;
+        e.clientX <= rectBounds.right &&
+        e.clientY >= rectBounds.top &&
+        e.clientY <= rectBounds.bottom;
 }
 
 function detectResizeHandle(e, rect) {
@@ -443,7 +443,7 @@ function resetRectangle() {
     baseX = 0;
     baseY = 0;
 
-    baseCoordinates.innerHTML = '<p>Clicca e trascina sull\'immagine per disegnare un rettangolo</p>';
+    baseCoordinates.innerHTML = '<p>Click and drag on the image to draw a rectangle</p>';
     dimensionsInfo.style.display = 'none';
 
     disableControls();
@@ -568,7 +568,7 @@ window.RegionSelector = {
      * @param {Function} onConfirm - Callback quando l'utente conferma (riceve coordinates)
      * @param {Function} onCancel - Callback quando l'utente annulla
      */
-    init: function(onConfirm, onCancel) {
+    init: function (onConfirm, onCancel) {
         onConfirmCallback = onConfirm;
         onCancelCallback = onCancel;
     },
@@ -577,7 +577,7 @@ window.RegionSelector = {
      * Ottieni le coordinate attuali della selezione
      * @returns {Object} Oggetto con x, y, width, height, zoom, borderWidth, borderPosition
      */
-    getCoordinates: function() {
+    getCoordinates: function () {
         return getCoordinates();
     },
 
@@ -585,9 +585,9 @@ window.RegionSelector = {
      * Imposta un'immagine da URL
      * @param {String} imageUrl - URL dell'immagine
      */
-    setImage: function(imageUrl) {
+    setImage: function (imageUrl) {
         if (currentRectangle) {
-            if (confirm('Cambiando immagine il rettangolo verrà cancellato. Continuare?')) {
+            if (confirm('Changing image will clear the selection. Continue?')) {
                 resetRectangle();
             } else {
                 return;
@@ -601,7 +601,7 @@ window.RegionSelector = {
      * Carica una selezione precedente
      * @param {Object} coordinates - Oggetto coordinate
      */
-    loadCoordinates: function(coordinates) {
+    loadCoordinates: function (coordinates) {
         if (!coordinates || !coordinates.x) return;
 
         baseX = coordinates.x || 0;
