@@ -1,5 +1,6 @@
 // BoxBox Extension - Modernizada para ComfyUI v1.0 / v0.12.2+
 import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
 
 console.log("[BoxBox] Loading extension (Modern API)...");
 
@@ -961,11 +962,21 @@ app.registerExtension({
             const r = onNodeCreated?.apply(this, arguments);
             const node = this;
 
-            console.log("[BoxBox] Node instance created, attaching button widget...");
+            console.log("[BoxBox] Node instance created, attaching button widgets...");
 
-            // Add native ComfyUI button
+            // Button 1: Image Cache — executes only the BoxSelector subgraph
+            // and shows a preview image on the node (like PreviewBridge)
+            this.addWidget("button", "🖼️ Image Cache", null, async () => {
+                console.log("[BoxBox] Image Cache clicked, auto-executing subgraph...");
+                const success = await autoExecuteForPreview(node, app);
+                if (!success) {
+                    alert("⚠️ Could not generate preview.\n\nMake sure an image source is connected.");
+                }
+            });
+
+            // Button 2: Select Box — opens the region selector dialog
             this.addWidget("button", "📦 Select Box", null, () => {
-                console.log("[BoxBox] Button clicked!");
+                console.log("[BoxBox] Select Box clicked!");
                 openRegionDialog(node, app);
             });
 
@@ -1036,27 +1047,171 @@ function findImageInChain(node, app, depth = 0, maxDepth = 20) {
 /**
  * Apre il dialog del selettore di regioni
  */
+/**
+ * Recursively collects a node and all its input dependencies from the serialized prompt.
+ * Used to build a minimal prompt that only executes the BoxSelector subgraph.
+ */
+function recursiveAddNodes(nodeId, oldOutput, newOutput) {
+    const currentId = String(nodeId);
+    const currentNode = oldOutput[currentId];
+    if (!currentNode || newOutput[currentId] != null) return newOutput;
+
+    newOutput[currentId] = currentNode;
+    for (const inputValue of Object.values(currentNode.inputs || {})) {
+        if (Array.isArray(inputValue) && inputValue.length >= 2) {
+            recursiveAddNodes(inputValue[0], oldOutput, newOutput);
+        }
+    }
+    return newOutput;
+}
+
+/**
+ * Auto-executes the BoxSelector node and its upstream dependencies,
+ * then waits for the execution to complete.
+ * Returns true if execution succeeded, false otherwise.
+ */
+async function autoExecuteForPreview(node, app) {
+    console.log("[BoxBox] Auto-executing node", node.id, "to generate preview...");
+
+    return new Promise(async (resolve) => {
+        let resolved = false;
+        const targetNodeId = String(node.id);
+
+        function cleanup() {
+            api.removeEventListener("executed", onExecuted);
+            api.removeEventListener("status", onStatus);
+            api.removeEventListener("execution_error", onError);
+        }
+
+        // Track if our queue has started executing (to avoid false positives from
+        // an already-empty queue status event before execution begins)
+        let executionStarted = false;
+        let ourNodeExecuted = false;
+
+        // Listen for per-node completion — mark that our node has finished
+        const onExecuted = (event) => {
+            const eventNodeId = String(event.detail?.node ?? "");
+            console.log(`[BoxBox] 'executed' event for node ${eventNodeId} (waiting for ${targetNodeId})`);
+            executionStarted = true;
+            if (eventNodeId === targetNodeId) {
+                ourNodeExecuted = true;
+                // Resolve immediately — our node is done
+                if (!resolved) {
+                    resolved = true;
+                    cleanup();
+                    console.log("[BoxBox] ✅ Node", targetNodeId, "executed (via 'executed' event)");
+                    resolve(true);
+                }
+            }
+        };
+
+        // Listen for queue drain — reliable backup signal
+        const onStatus = (event) => {
+            const queueRemaining = event.detail?.exec_info?.queue_remaining
+                ?? event.detail?.status?.exec_info?.queue_remaining;
+            if (queueRemaining === 0 && executionStarted && !resolved) {
+                resolved = true;
+                cleanup();
+                console.log("[BoxBox] ✅ Queue drained (via 'status' event), node executed:", ourNodeExecuted);
+                resolve(true);
+            }
+        };
+
+        const onError = (event) => {
+            // Only treat it as our error if execution had started
+            if (executionStarted && !resolved) {
+                resolved = true;
+                cleanup();
+                console.error("[BoxBox] ❌ Execution error", event.detail);
+                resolve(false);
+            }
+        };
+
+        // Safety timeout (30 seconds)
+        setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                cleanup();
+                console.warn("[BoxBox] ⏱️ Auto-execute timed out after 30s");
+                resolve(false);
+            }
+        }, 30000);
+
+        api.addEventListener("executed", onExecuted);
+        api.addEventListener("status", onStatus);
+        api.addEventListener("execution_error", onError);
+
+        try {
+            // Serialize the full graph
+            const prompt = await app.graphToPrompt();
+
+            if (!prompt?.output?.[targetNodeId]) {
+                console.error("[BoxBox] Node", targetNodeId, "not found in serialized prompt. Is it connected?");
+                resolved = true;
+                cleanup();
+                resolve(false);
+                return;
+            }
+
+            // Prune prompt to only include BoxSelector and its upstream dependencies
+            const prunedOutput = recursiveAddNodes(targetNodeId, prompt.output, {});
+            prompt.output = prunedOutput;
+
+            console.log("[BoxBox] Queuing partial execution with", Object.keys(prunedOutput).length, "nodes");
+
+            // Queue the pruned prompt
+            await api.queuePrompt(0, prompt);
+        } catch (e) {
+            console.error("[BoxBox] Failed to queue auto-execute:", e);
+            if (!resolved) {
+                resolved = true;
+                cleanup();
+                resolve(false);
+            }
+        }
+    });
+}
+
 async function openRegionDialog(node, app) {
     console.log("[RegionSelectorExt] Opening dialog...");
 
     let imageInfo = null;
+    const nodeId = node.id;
 
-    // Search in the connected node chain
-    if (node.inputs && node.inputs[0]?.link != null) {
-        const link = app.graph.links[node.inputs[0].link];
-        if (link) {
-            const sourceNode = app.graph._nodes_by_id[link.origin_id];
-            imageInfo = findImageInChain(sourceNode, app);
+    // === PRIMARY: Try backend preview (set by Image Cache or previous execution) ===
+    try {
+        const previewRes = await fetch(`/region_selector/preview?node_id=${nodeId}`);
+        if (previewRes.ok) {
+            const previewData = await previewRes.json();
+            if (previewData.found) {
+                imageInfo = {
+                    filename: previewData.filename,
+                    type: previewData.type || "temp",
+                    subfolder: previewData.subfolder || ""
+                };
+                console.log("[RegionSelectorExt] ✅ Got image from backend preview cache:", imageInfo);
+            }
+        }
+    } catch (e) {
+        console.warn("[RegionSelectorExt] Backend preview fetch failed:", e);
+    }
+
+    // === FALLBACK: Traverse node chain (works for LoadImage, PreviewBridge) ===
+    if (!imageInfo) {
+        if (node.inputs && node.inputs[0]?.link != null) {
+            const link = app.graph.links[node.inputs[0].link];
+            if (link) {
+                const sourceNode = app.graph._nodes_by_id[link.origin_id];
+                imageInfo = findImageInChain(sourceNode, app);
+            }
+        }
+        if (!imageInfo) {
+            imageInfo = findImageInChain(node, app);
         }
     }
 
-    // Fallback: Check the node itself
-    if (!imageInfo) {
-        imageInfo = findImageInChain(node, app);
-    }
-
     if (!imageInfo || !imageInfo.filename) {
-        alert("⚠️ No image found!\n\nPlease connect a node that shows an image (like LoadImage or PreviewBridge) and ensure it has executed at least once.");
+        alert("⚠️ No image found!\n\nClick '🖼️ Image Cache' first to generate the preview.");
         return;
     }
 

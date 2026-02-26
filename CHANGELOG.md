@@ -2,6 +2,26 @@
 
 All notable changes to this enhanced version of BoxBox will be documented in this file.
 
+## [Enhanced v1.1.0] - 2026-02-26
+
+### Added
+- **Two-button UX**: Replaced single "Select Box" button with:
+  - **🖼️ Image Cache**: Executes only the BoxSelector subgraph (not the full workflow), saves the processed image, and shows a preview directly on the node
+  - **📦 Select Box**: Opens the region selector dialog using the cached image
+- **Node preview**: BoxSelector now shows its input image preview on the node itself (like PreviewImage/PreviewBridge)
+
+### Fixed
+- **BoxSelector now works with intermediate nodes**: Previously, `LoadImage → Scale → BoxSelector` caused "No image found!" error. Now the backend saves the actual input tensor to temp.
+
+### Technical Details
+- Backend returns `{"ui": {"images": [...]}, "result": (...)}` format for automatic node preview
+- Added `UNIQUE_ID` hidden input for per-node tracking
+- `Image Cache` uses `app.graphToPrompt()` + `recursiveAddNodes()` to prune the prompt (same technique as rgthree-comfy)
+- Listens for `api` `executed`/`status` events to detect partial execution completion
+- New `GET /region_selector/preview?node_id=X` endpoint serves cached preview info
+
+---
+
 ## [Enhanced v1.0.0] - 2026-01-19
 
 ### Added

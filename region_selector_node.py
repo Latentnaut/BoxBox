@@ -6,9 +6,15 @@ Outputs box_metadata with coordinates and displayScaleFactor.
 
 import os
 import json
+import numpy as np
 from PIL import Image
 import folder_paths
+import nodes
 import server
+
+
+# Class-level cache: stores preview image info per node_id
+_boxselector_preview_cache = {}
 
 
 class RegionSelectorNode:
@@ -23,7 +29,8 @@ class RegionSelectorNode:
     def INPUT_TYPES(cls):
         return {
             "required": {"image": ("IMAGE",)},
-            "optional": {"box_metadata": ("STRING", {"default": "", "multiline": True})}
+            "optional": {"box_metadata": ("STRING", {"default": "", "multiline": True})},
+            "hidden": {"unique_id": "UNIQUE_ID"}
         }
 
     RETURN_TYPES = ("IMAGE", "STRING")
@@ -32,10 +39,28 @@ class RegionSelectorNode:
     CATEGORY = "image/region"
     OUTPUT_NODE = True
 
-    def process_region_selection(self, image, box_metadata="{}"):
+    def process_region_selection(self, image, box_metadata="{}", unique_id=None):
         if box_metadata.strip() and box_metadata != "{}":
             self.last_metadata = box_metadata
-        return (image, self.last_metadata)
+
+        # Save input image to temp and return as UI preview.
+        # Returning {"ui": {"images": [...]}} makes ComfyUI show the preview on the node.
+        ui_images = []
+        if unique_id is not None:
+            try:
+                res = nodes.PreviewImage().save_images(
+                    image, filename_prefix=f"BoxSelector/BS-{unique_id}"
+                )
+                ui_images = res["ui"]["images"]
+                if ui_images:
+                    _boxselector_preview_cache[str(unique_id)] = ui_images[0]
+            except Exception as e:
+                print(f"[BoxSelector] Warning: failed to save preview: {e}")
+
+        return {
+            "ui": {"images": ui_images},
+            "result": (image, self.last_metadata)
+        }
 
 
 def scale_image_if_needed(filename, type="input", subfolder="", max_size=1024):
@@ -83,6 +108,30 @@ def scale_image_if_needed(filename, type="input", subfolder="", max_size=1024):
         print(f"[RegionSelector] Image scaled {w}x{h} -> {new_size[0]}x{new_size[1]}")
 
     return {"scaled": True, "path": f"/view?filename={scaled_name}&type=temp", "scale": scale_factor}
+
+
+@server.PromptServer.instance.routes.get("/region_selector/preview")
+async def preview_image_endpoint(request):
+    """Return preview image info for a BoxSelector node by its unique_id."""
+    from aiohttp import web
+    try:
+        node_id = request.rel_url.query.get("node_id", "")
+        if not node_id:
+            return web.json_response({"error": "node_id missing"}, status=400)
+
+        if node_id in _boxselector_preview_cache:
+            img_info = _boxselector_preview_cache[node_id]
+            return web.json_response({
+                "found": True,
+                "filename": img_info["filename"],
+                "type": img_info.get("type", "temp"),
+                "subfolder": img_info.get("subfolder", "")
+            })
+        else:
+            return web.json_response({"found": False}, status=404)
+    except Exception as e:
+        print(f"[BoxBox] Error in preview endpoint: {e}")
+        return web.json_response({"error": str(e)}, status=500)
 
 
 @server.PromptServer.instance.routes.post("/region_selector/scale")
