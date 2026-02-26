@@ -5,8 +5,8 @@ import { api } from "../../scripts/api.js";
 console.log("[BoxBox] Loading extension (Modern API)...");
 
 /**
- * Canvas Selector - Funzionalità complete di selezione rettangoli
- * Basato sul codice di canva_html
+ * Canvas Selector - Complete rectangle selection functionality
+ * Based on canva_html code
  */
 
 function initializeCanvasSelector(container, imageUrl, previousMetadata = null) {
@@ -226,7 +226,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
         aspectRatioValue = ratioMap[aspectRatioMode];
 
         if (aspectRatioMode === "free") {
-            aspectRatioHint.textContent = "Disegno libero - il ratio verrà calcolato";
+            aspectRatioHint.textContent = "Free draw — ratio calculated after";
             aspectRatioHint.style.color = "#64748b";
             aspectRatioHint.style.fontWeight = "normal";
         } else {
@@ -820,7 +820,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
         const h = Math.round(baseHeight);
         const ratio = w / h;
 
-        // 🎯 MODALITÀ CUSTOM: Calcola approssimazione
+        // 🎯 CUSTOM MODE: Calculate approximation
         let aspectRatioDisplay;
 
         if (aspectRatioMode === "free") {
@@ -837,7 +837,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
                 { value: 9 / 21, label: "9:21 Portrait", display: "9:21" },
             ];
 
-            // Trova il più vicino
+            // Find the closest
             let closestRatio = standardRatios[0];
             let minDiff = Math.abs(ratio - standardRatios[0].value);
 
@@ -863,7 +863,7 @@ function initializeCanvasSelector(container, imageUrl, previousMetadata = null) 
                 aspectRatioDisplay = `<span style="color: #818cf8; font-weight: 600;">${ratio.toFixed(2)}:1</span> <span style="opacity: 0.45; font-size: 10px;">(≈ ${closestRatio.display})</span>`;
             }
         } else {
-            // 🔒 MODALITÀ VINCOLATA: Mostra il vincolo attivo
+            // 🔒 CONSTRAINED MODE: Show active constraint
             aspectRatioDisplay = `<span style="color: #4ade80; font-weight: 600;">🔒 ${aspectRatioMode}</span> <span style="opacity: 0.5; font-size: 10px;">(${ratio.toFixed(2)}:1)</span>`;
         }
 
@@ -1251,7 +1251,7 @@ async function openRegionDialog(node, app) {
         if (window.comfyAPI && window.comfyAPI.ui && window.comfyAPI.ui.ComfyDialog) {
             dialog = new window.comfyAPI.ui.ComfyDialog();
         } else {
-            // Fallback se siamo su una versione vecchia o il bus bridge è attivo
+            // Fallback for older versions or when bus bridge is active
             const { ComfyDialog } = await import("../../scripts/ui.js");
             dialog = new ComfyDialog();
         }
@@ -1544,22 +1544,44 @@ async function openRegionDialog(node, app) {
                 <!-- Spacer -->
                 <div style="flex: 1;"></div>
 
-                <!-- Keyboard hints -->
+                <!-- Action Buttons -->
                 <div style="
-                    font-size: 10px;
-                    color: #4b5563;
-                    line-height: 1.6;
-                    padding: 10px 0 0 0;
-                    border-top: 1px solid rgba(255,255,255,0.04);
+                    display: flex;
+                    gap: 8px;
+                    padding: 12px 0 10px 0;
+                    border-top: 1px solid rgba(255,255,255,0.05);
                 ">
-                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
-                        <span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px;">Drag</span>
-                        <span>Draw selection</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px;">Handles</span>
-                        <span>Resize selection</span>
-                    </div>
+                    <button id="bs-confirm-btn" style="
+                        flex: 1;
+                        background: #22c55e;
+                        color: #fff;
+                        border: none;
+                        padding: 8px 0;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 12px;
+                        font-family: inherit;
+                        transition: all 0.15s ease;
+                    ">Confirm</button>
+                    <button id="bs-cancel-btn" style="
+                        flex: 1;
+                        background: transparent;
+                        color: #6b7280;
+                        border: 1px solid rgba(255,255,255,0.06);
+                        padding: 8px 0;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        font-size: 12px;
+                        font-family: inherit;
+                        transition: all 0.15s ease;
+                    ">Cancel</button>
+                </div>
+
+                <!-- Hints -->
+                <div style="font-size: 9px; color: #374151; line-height: 1.5; text-align: center;">
+                    Drag to draw · Handles to resize
                 </div>
             </div>
 
@@ -1600,58 +1622,25 @@ async function openRegionDialog(node, app) {
     container.innerHTML = innerHtml;
     dialog.element.appendChild(container);
 
-    // Action buttons
-    const confirmBtn = document.createElement("button");
-    confirmBtn.textContent = "✓  Confirm Selection";
-    confirmBtn.style.cssText = `
-        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-        color: white;
-        border: none;
-        padding: 11px 28px;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 13px;
-        font-family: inherit;
-        letter-spacing: 0.01em;
-        margin-right: 10px;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
-    `;
-    confirmBtn.onmouseover = () => { confirmBtn.style.transform = "translateY(-1px)"; confirmBtn.style.boxShadow = "0 4px 16px rgba(34, 197, 94, 0.35)"; };
-    confirmBtn.onmouseout = () => { confirmBtn.style.transform = "translateY(0)"; confirmBtn.style.boxShadow = "0 2px 8px rgba(34, 197, 94, 0.25)"; };
+    // Wire up sidebar buttons
+    const confirmBtn = container.querySelector('#bs-confirm-btn');
+    const cancelBtn = container.querySelector('#bs-cancel-btn');
 
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.style.cssText = `
-        background: transparent;
-        color: #8b95a5;
-        border: 1px solid rgba(255,255,255,0.1);
-        padding: 11px 24px;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: 500;
-        font-size: 13px;
-        font-family: inherit;
-        transition: all 0.2s ease;
-    `;
-    cancelBtn.onmouseover = () => { cancelBtn.style.borderColor = "rgba(239,68,68,0.3)"; cancelBtn.style.color = "#f87171"; };
-    cancelBtn.onmouseout = () => { cancelBtn.style.borderColor = "rgba(255,255,255,0.1)"; cancelBtn.style.color = "#8b95a5"; };
-
-    confirmBtn.onclick = () => {
-        console.log("[RegionSelectorExt] Confirm clicked but CanvasSelector not ready yet");
-    };
+    confirmBtn.onmouseover = () => { confirmBtn.style.background = "#16a34a"; };
+    confirmBtn.onmouseout = () => { confirmBtn.style.background = "#22c55e"; };
+    cancelBtn.onmouseover = () => { cancelBtn.style.color = "#f87171"; cancelBtn.style.borderColor = "rgba(239,68,68,0.2)"; };
+    cancelBtn.onmouseout = () => { cancelBtn.style.color = "#6b7280"; cancelBtn.style.borderColor = "rgba(255,255,255,0.06)"; };
 
     cancelBtn.onclick = () => {
         console.log("[RegionSelectorExt] Dialog cancelled");
         dialog.close();
     };
 
-    dialog.show(confirmBtn, cancelBtn);
+    // Show dialog with no external buttons (buttons are inside sidebar)
+    dialog.show();
 
-    // Inizializza il selettore dopo che il DOM è renderizzato
+    // Initialize selector after DOM is rendered
     setTimeout(() => {
-        // Carica canvas_selector.js se non è già caricato
         let attempts = 0;
         const waitForCanvasSelector = setInterval(() => {
             attempts++;
@@ -1663,12 +1652,11 @@ async function openRegionDialog(node, app) {
 
                 const selector = window.CanvasSelector.initializeCanvasSelector(container, imageUrl, previousMetadata);
 
-                // Aggiorna il confirm button per usare le coordinate reali
+                // Update confirm button to save real coordinates
                 confirmBtn.onclick = () => {
                     const coords = selector.getCoordinates();
 
-                    // Cerca il widget box_metadata tra i widget del nodo
-                    // ComfyUI lo crea automaticamente dal INPUT_TYPES opzionale
+                    // Find box_metadata widget (auto-created by ComfyUI from INPUT_TYPES)
                     let metadataWidget = node.widgets?.find((w) => w.name === "box_metadata");
 
                     if (metadataWidget) {
@@ -1699,11 +1687,11 @@ async function openRegionDialog(node, app) {
 }
 
 /**
- * Esegue il nodo sorgente per ottenere l'immagine
+ * Executes the source node to get the image
  */
 async function executeSourceNode(sourceNode, app) {
     try {
-        // Se il nodo sorgente è LoadImage, il widget "image" contiene il filename
+        // If source node is LoadImage, the "image" widget contains the filename
         const imageWidget = sourceNode.widgets?.find(w => w.name === "image");
         if (imageWidget && imageWidget.value) {
             console.log("[RegionSelectorExt] Found image in source node:", imageWidget.value);
